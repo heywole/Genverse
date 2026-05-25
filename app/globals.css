@@ -4,14 +4,13 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-/* ── LIGHT (default) — warm cream matching reference image ── */
 :root {
   --bg:           #FDF6EC;
   --bg-card:      #FFF9F2;
   --bg-secondary: #F5ECDB;
   --bg-tertiary:  #EDE0CA;
   --border:       rgba(0,0,0,0.07);
-  --border-hi:    rgba(0,0,0,0.12);
+  --border-hi:    rgba(0,0,0,0.13);
   --text-1:       #1A1208;
   --text-2:       #4A3C28;
   --text-3:       #9A8A70;
@@ -34,17 +33,10 @@
   --blue-bg:      rgba(37,99,235,0.08);
   --blue-bd:      rgba(37,99,235,0.22);
 
-
-  /* Theme-aware component vars */
-  --hero-bg:   linear-gradient(135deg, #FEF9F0 0%, #FAF0D8 50%, #F0E3BE 100%);
-  --cta-bg:    linear-gradient(135deg, #1A1208 0%, #2C1E0A 100%);
-  --cta-text:  #FEF9F0;
-  --cta-sub:   rgba(254,249,240,0.6);
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 }
 
-/* ── DARK ── */
 .dark {
   --bg:           #18140E;
   --bg-card:      #211C14;
@@ -61,11 +53,6 @@
   --brand-bg:     rgba(240,120,48,0.10);
   --brand-bd:     rgba(240,120,48,0.25);
 
-
-  --hero-bg:   linear-gradient(135deg, #211C14 0%, #2A2318 50%, #352C1E 100%);
-  --cta-bg:    linear-gradient(135deg, #FEF9F0 0%, #F5EDD8 100%);
-  --cta-text:  #1A1208;
-  --cta-sub:   rgba(26,18,8,0.6);
   --green:        #22C55E;
   --green-bg:     rgba(34,197,94,0.08);
   --green-bd:     rgba(34,197,94,0.20);
@@ -82,18 +69,74 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-body {
-  font-family: var(--font-sans);
-  background: var(--bg);
-  color: var(--text-1);
-  -webkit-font-smoothing: antialiased;
-}
+body { font-family: var(--font-sans); background: var(--bg); color: var(--text-1); -webkit-font-smoothing: antialiased; }
 
+/* ── Theme-aware hero and CTA sections ── */
+.hero-section {
+  background: linear-gradient(135deg, #FEF9F0 0%, #FAF0D8 50%, #F0E3BE 100%);
+}
+.dark .hero-section {
+  background: linear-gradient(135deg, #211C14 0%, #2A2318 50%, #352C1E 100%);
+}
+.cta-section {
+  background: linear-gradient(135deg, #1A1208 0%, #2C1E0A 100%);
+}
+.dark .cta-section {
+  background: linear-gradient(135deg, #F5ECD8 0%, #EDE0CA 100%);
+}
+.cta-section .cta-title { color: #FEF9F0; }
+.dark .cta-section .cta-title { color: #1A1208; }
+.cta-section .cta-sub { color: rgba(254,249,240,0.65); }
+.dark .cta-section .cta-sub { color: rgba(26,18,8,0.65); }
+.cta-section .cta-btn { background: var(--brand); color: #fff; }
+.dark .cta-section .cta-btn { background: var(--brand); color: #fff; }
+
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
 
+/* ── Animations ── */
 @keyframes spin    { to { transform: rotate(360deg); } }
 @keyframes pulse   { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 @keyframes slideIn { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:translateX(0); } }
 @keyframes fadeUp  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── Mobile responsive ── */
+@media (max-width: 768px) {
+  /* Layout */
+  .sidebar-desktop { display: none !important; }
+  .main-content    { margin-left: 0 !important; }
+
+  /* Homepage hero */
+  .hero-grid       { grid-template-columns: 1fr !important; }
+  .hero-pills      { display: none !important; }
+
+  /* Stats */
+  .stats-grid      { grid-template-columns: 1fr 1fr !important; }
+
+  /* Project grid */
+  .proj-grid-home  { grid-template-columns: 1fr !important; }
+
+  /* How it works */
+  .how-grid        { grid-template-columns: 1fr 1fr !important; }
+
+  /* Why + AI section */
+  .why-ai-grid     { grid-template-columns: 1fr !important; }
+
+  /* Explore */
+  .explore-controls { flex-wrap: wrap !important; }
+
+  /* Project detail */
+  .proj-detail-grid { grid-template-columns: 1fr !important; }
+  .proj-detail-sidebar { position: static !important; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid   { grid-template-columns: 1fr !important; }
+  .how-grid     { grid-template-columns: 1fr !important; }
+}
+
+/* ── details/summary dropdown styling ── */
+details summary::-webkit-details-marker { display: none; }
+details[open] summary svg:last-child { transform: rotate(180deg); }

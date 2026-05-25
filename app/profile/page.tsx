@@ -24,6 +24,11 @@ export default function ProfilePage() {
   const [delRequests,  setDelRequests]  = useState<DeleteRequest[]>([])
   const [saving,       setSaving]       = useState(false)
   const [editForm, setEditForm] = useState({ name: '', description: '', website_url: '', github_url: '', twitter_url: '', discord_url: '', docs_url: '', category: '' })
+  const [builderProfile,     setBuilderProfile]     = useState<any>(null)
+  const [showBuilderForm,    setShowBuilderForm]     = useState(false)
+  const [builderForm,        setBuilderForm]         = useState({ bio: '', twitter_url: '', telegram_url: '', github_url: '', discord_url: '', website_url: '', other_links: '' })
+  const [savingBuilder,      setSavingBuilder]       = useState(false)
+  const [builderSaved,       setBuilderSaved]        = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -37,7 +42,43 @@ export default function ProfilePage() {
     if (!user) return
     fetchProjects(tab)
     loadDeleteRequests()
+    loadBuilderProfile()
   }, [tab, user])
+
+  async function loadBuilderProfile() {
+    if (!user) return
+    const res = await fetch(`/api/builder-profile?user_id=${user.id}`)
+    const data = await res.json()
+    if (data.profile) {
+      setBuilderProfile(data.profile)
+      setBuilderForm({
+        bio:          data.profile.bio          || '',
+        twitter_url:  data.profile.twitter_url  || '',
+        telegram_url: data.profile.telegram_url || '',
+        github_url:   data.profile.github_url   || '',
+        discord_url:  data.profile.discord_url  || '',
+        website_url:  data.profile.website_url  || '',
+        other_links:  data.profile.other_links  || '',
+      })
+    }
+  }
+
+  async function saveBuilderProfile() {
+    if (!user) return
+    setSavingBuilder(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    await fetch('/api/builder-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(builderForm),
+    })
+    setSavingBuilder(false)
+    setBuilderSaved(true)
+    setShowBuilderForm(false)
+    loadBuilderProfile()
+    setTimeout(() => setBuilderSaved(false), 3000)
+  }
 
   function loadDeleteRequests() {
     try {
@@ -86,7 +127,20 @@ export default function ProfilePage() {
   async function handleSaveEdit() {
     if (!editProject || !user) return
     setSaving(true)
-    await supabase.from('projects').update({ ...editForm, github_url: editForm.github_url || null, twitter_url: editForm.twitter_url || null, discord_url: editForm.discord_url || null, docs_url: editForm.docs_url || null }).eq('id', editProject.id).eq('created_by', user.id)
+    await supabase.from('projects').update({
+      ...editForm,
+      github_url:   editForm.github_url   || null,
+      twitter_url:  editForm.twitter_url  || null,
+      discord_url:  editForm.discord_url  || null,
+      docs_url:     editForm.docs_url     || null,
+      evaluation_status: 'pending',
+    }).eq('id', editProject.id).eq('created_by', user.id)
+    // Trigger re-evaluation after edit
+    fetch('/api/re-evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: editProject.id }),
+    }).catch(() => {})
     setSaving(false); setEditProject(null); fetchProjects('submitted')
   }
 
@@ -127,7 +181,7 @@ export default function ProfilePage() {
       {/* Profile header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 36, paddingBottom: 24, borderBottom: '1px solid var(--border-hi)' }}>
         <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--bg-secondary)', border: '1px solid var(--border-hi)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-          {user?.user_metadata?.avatar_url ? <img src={user.user_metadata.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={22} color="var(--text-3)" />}
+          {user?.user_metadata?.avatar_url ? <img src={user.user_metadata.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.display='none' }} /> : <User size={22} color="var(--text-3)" />}
         </div>
         <div>
           <h1 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 19, color: 'var(--text-1)', marginBottom: 3 }}>
@@ -172,6 +226,89 @@ export default function ProfilePage() {
           })}
         </div>
       )}
+
+      {/* ── Builder Profile Section ── */}
+      <div style={{ marginBottom: 24, padding: '20px', background: 'var(--bg-secondary)', borderRadius: 14, border: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: builderProfile || showBuilderForm ? 16 : 0, flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <h3 style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-1)', margin: 0, marginBottom: 2 }}>Builder Profile</h3>
+            <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>Visible on your project pages under the Builder Profile tab</p>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {builderSaved && <span style={{ fontSize: 12, color: 'var(--green)', fontFamily: 'var(--font-mono)' }}>✓ Saved</span>}
+            {projects.length === 0 && !builderProfile ? (
+              <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontStyle: 'italic' }}>Submit a project first</span>
+            ) : (
+              <button onClick={() => setShowBuilderForm(!showBuilderForm)} style={{
+                padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border-hi)',
+                background: showBuilderForm ? 'var(--brand)' : 'transparent',
+                color: showBuilderForm ? '#fff' : 'var(--text-1)',
+                cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-sans)',
+              }}>
+                {builderProfile ? (showBuilderForm ? 'Cancel' : 'Edit Profile') : (showBuilderForm ? 'Cancel' : 'Create Builder Profile')}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Builder profile form */}
+        {showBuilderForm && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              { key: 'bio',          label: 'Bio',          placeholder: 'Tell the community about yourself...', multi: true },
+              { key: 'twitter_url',  label: 'X / Twitter',  placeholder: 'https://x.com/yourhandle' },
+              { key: 'telegram_url', label: 'Telegram',     placeholder: 'https://t.me/yourhandle' },
+              { key: 'github_url',   label: 'GitHub',       placeholder: 'https://github.com/yourname' },
+              { key: 'discord_url',  label: 'Discord',      placeholder: 'https://discord.gg/yourserver' },
+              { key: 'website_url',  label: 'Website',      placeholder: 'https://yourwebsite.com' },
+              { key: 'other_links',  label: 'Other Details', placeholder: 'Any other info or links...' },
+            ].map(({ key, label, placeholder, multi }) => (
+              <div key={key}>
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 5, display: 'block' }}>{label}</label>
+                {multi ? (
+                  <textarea
+                    value={(builderForm as any)[key]}
+                    onChange={e => setBuilderForm(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder} rows={3}
+                    style={{ width: '100%', padding: '9px 12px', background: 'var(--bg-card)', border: '1.5px solid var(--border-hi)', borderRadius: 8, color: 'var(--text-1)', fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' }}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={(builderForm as any)[key]}
+                    onChange={e => setBuilderForm(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    style={{ width: '100%', height: 40, padding: '0 12px', background: 'var(--bg-card)', border: '1.5px solid var(--border-hi)', borderRadius: 8, color: 'var(--text-1)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' }}
+                  />
+                )}
+              </div>
+            ))}
+            <button onClick={saveBuilderProfile} disabled={savingBuilder} style={{
+              padding: '10px', background: 'var(--brand)', color: '#fff', border: 'none',
+              borderRadius: 8, cursor: savingBuilder ? 'not-allowed' : 'pointer',
+              fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-sans)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              opacity: savingBuilder ? 0.7 : 1,
+            }}>
+              {savingBuilder ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Saving...</> : 'Save Builder Profile'}
+            </button>
+          </div>
+        )}
+
+        {/* Show existing profile summary */}
+        {builderProfile && !showBuilderForm && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {builderProfile.bio && <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7 }}>{builderProfile.bio}</p>}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {builderProfile.twitter_url  && <span style={{ fontSize: 12, color: 'var(--text-3)' }}>✓ Twitter</span>}
+              {builderProfile.github_url   && <span style={{ fontSize: 12, color: 'var(--text-3)' }}>✓ GitHub</span>}
+              {builderProfile.telegram_url && <span style={{ fontSize: 12, color: 'var(--text-3)' }}>✓ Telegram</span>}
+              {builderProfile.discord_url  && <span style={{ fontSize: 12, color: 'var(--text-3)' }}>✓ Discord</span>}
+              {builderProfile.website_url  && <span style={{ fontSize: 12, color: 'var(--text-3)' }}>✓ Website</span>}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Project grid */}
       {fetching ? (

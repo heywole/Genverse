@@ -131,3 +131,35 @@ CREATE POLICY "Authenticated users can upload logos"
 --    http://localhost:3000/api/auth/callback
 --    https://your-app.vercel.app/api/auth/callback
 -- ================================================================
+
+-- ── Builder Profiles ──────────────────────────────────────────
+-- Run this in Supabase SQL Editor to add builder profiles support
+CREATE TABLE IF NOT EXISTS builder_profiles (
+  id          UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id     UUID        NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  bio         TEXT,
+  twitter_url TEXT,
+  telegram_url TEXT,
+  github_url  TEXT,
+  discord_url TEXT,
+  website_url TEXT,
+  other_links TEXT,
+  avatar_url  TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE builder_profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can read builder profiles"
+  ON builder_profiles FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert own builder profile"
+  ON builder_profiles FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own builder profile"
+  ON builder_profiles FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_builder_profiles_user ON builder_profiles(user_id);

@@ -48,7 +48,7 @@ export function ProjectCard({ project }: { project: Project }) {
   const dc = (project as any).discord_url
   const tg = (project as any).telegram_url
   const views = project._count?.views ?? 0
-  const saves = project._count?.saves ?? 0
+  const [saves, setSaves] = useState(project._count?.saves ?? 0)
 
   async function handleSave(e: React.MouseEvent) {
     e.stopPropagation()
@@ -60,7 +60,9 @@ export function ProjectCard({ project }: { project: Project }) {
       body: JSON.stringify({ project_id: project.id, type: 'save' }),
     })
     const data = await res.json()
-    setSaved(data.action === 'added')
+    const added = data.action === 'added'
+    setSaved(added)
+    setSaves(s => added ? s + 1 : Math.max(0, s - 1))
   }
 
   return (
@@ -121,9 +123,7 @@ export function ProjectCard({ project }: { project: Project }) {
             <div style={{ width: 1, height: 40, background: 'var(--border-hi)', flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>AI Score</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: colors.main, marginBottom: 6 }}>
-                {ai.score >= 75 ? 'High Trust' : ai.score >= 50 ? 'Moderate Trust' : 'Low Trust'}
-              </div>
+
               {/* Trust & Risk on ONE line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--text-2)' }}>

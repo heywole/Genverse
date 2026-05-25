@@ -54,7 +54,7 @@ export function Sidebar({ session: initialSession }: Props) {
 
   return (
     <>
-      <aside style={{
+      <aside className="sidebar-desktop" style={{
         width, minWidth: width,
         position: 'fixed', top: 64, left: 0,
         height: 'calc(100vh - 64px)',

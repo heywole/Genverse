@@ -136,7 +136,7 @@ export default function ExplorePage() {
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 14 }}>
+        <div className="proj-grid-home" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
           {projects.map(p => <ProjectCard key={p.id} project={p} />)}
         </div>
       )}
