@@ -67,7 +67,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
   const txHash      = ai?.tx_hash ?? null
   const explorerUrl = txHash
     ? `https://explorer-studio.genlayer.com/tx/${txHash}`
-    : 'https://explorer-studio.genlayer.com'
+    : 'https://explorer-studio.genlayer.com/txs'
 
   const R = 30, circ = 2 * Math.PI * R
   const offset = score !== null ? circ * (1 - score / 100) : circ

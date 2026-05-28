@@ -9,13 +9,15 @@ export interface AIScoreBreakdown {
 }
 
 export interface AIScore {
-  score:      number
-  risk:       RiskLevel
-  confidence: ConfidenceLevel
-  positives:  string[]
-  risks:      string[]
-  breakdown?: AIScoreBreakdown | null
-  findings?:  string[]
+  score:       number
+  risk:        RiskLevel
+  confidence:  ConfidenceLevel
+  positives:   string[]
+  risks:       string[]
+  breakdown?:  AIScoreBreakdown | null
+  findings?:   string[]
+  explanation?: string
+  tx_hash?:    string | null
 }
 
 export interface Project {

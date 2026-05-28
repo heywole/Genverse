@@ -155,7 +155,7 @@ export async function evaluateProject(
           findings:    Array.isArray(data.findings)  ? data.findings.slice(0, 5)  : [],
           explanation: data.explanation ?? '',
           tx_hash:     txHash,
-        } as AIScore
+        }
       }
     } catch { /* keep polling */ }
     if (i % 12 === 0 && i > 0) console.log(`[GenLayer] Still waiting... attempt ${i}`)
