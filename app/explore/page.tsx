@@ -80,7 +80,7 @@ export default function ExplorePage() {
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 6 }}>Explore</p>
         <h1 style={{ fontWeight: 900, fontSize: 30, letterSpacing: '-0.03em', color: 'var(--text-1)', marginBottom: 4 }}>All Projects</h1>
         <p style={{ fontSize: 13, color: 'var(--text-3)' }}>
-          {loading ? 'Loading...' : `${projects.length} active project${projects.length !== 1 ? 's' : ''} — evaluated by GenLayer AI Consensus`}
+          {loading ? 'Loading...' : `${projects.length} active project${projects.length !== 1 ? 's' : ''} evaluated by GenLayer AI Consensus`}
         </p>
       </div>
 

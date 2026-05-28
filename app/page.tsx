@@ -37,7 +37,7 @@ function AIScanner() {
     return () => clearInterval(id)
   }, [])
 
-  function buildSteps(p: Project | null) {
+  function buildSteps(p: Project | null, txHash?: string | null) {
     const ai = p?.ai_score
     const score = ai ? Number(ai.score) : 76
     const risk  = ai ? ai.risk : 'Low'
@@ -72,9 +72,13 @@ function AIScanner() {
       { text: `> ${twitterStatus}`,                           color: '#D97706',       delay: 4700 },
       { text: '> Sending raw signals to GenLayer validators...', color: '#3B82F6',    delay: 5400 },
       {
-        text: 'TX: view on GenLayer Explorer ↗',
+        text: txHash
+          ? `TX: ${txHash.slice(0,10)}...${txHash.slice(-6)} → GenLayer Explorer ↗`
+          : 'TX: view on GenLayer Explorer ↗',
         color: '#3B82F6',
-        tx: 'https://explorer-studio.genlayer.com',
+        tx: txHash
+          ? `https://explorer-studio.genlayer.com/tx/${txHash}`
+          : 'https://explorer-studio.genlayer.com/txs',
         delay: 6100,
       },
       { text: `> Validator 1 (GPT-4o): score=${score}, risk=${risk} ✓`,       color: '#22C55E', delay: 7200 },
@@ -103,7 +107,7 @@ function AIScanner() {
     async function cycle() {
       const p = await fetchLatestEvaluation()
       setProject(p)
-      const steps = buildSteps(p)
+      const steps = buildSteps(p, (p?.ai_score as any)?.tx_hash)
       runAnimation(steps)
       // Restart after the last step + 3s pause
       const lastDelay = steps[steps.length - 1].delay
@@ -117,7 +121,7 @@ function AIScanner() {
     }
   }, [])
 
-  const steps = buildSteps(project)
+  const steps = buildSteps(project, (project?.ai_score as any)?.tx_hash)
 
   return (
     <div style={{ background: '#111', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 16px 40px rgba(0,0,0,0.25)' }}>
@@ -230,7 +234,7 @@ export default function HomePage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
             <h2 style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text-1)', margin: 0 }}>Trending Projects</h2>
-            <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>Most viewed — live data</p>
+            <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>Most viewed · live data</p>
           </div>
           <Link href="/explore" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: 'var(--brand)', textDecoration: 'none' }}>
             View all <ArrowRight size={13} />
@@ -286,7 +290,7 @@ export default function HomePage() {
         <div>
           <h3 style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text-1)', marginBottom: 8 }}>Live AI Evaluation</h3>
           <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.7, marginBottom: 14 }}>
-            Real evaluations from your submitted projects — scanner signals sent to GenLayer validators, consensus reached on-chain.
+            Real evaluations from your submitted projects. Scanner signals sent to GenLayer validators, consensus reached on-chain.
           </p>
           <AIScanner />
         </div>

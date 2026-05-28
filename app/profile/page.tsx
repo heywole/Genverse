@@ -36,6 +36,7 @@ export default function ProfilePage() {
   const [avatarFile,       setAvatarFile]       = useState<File | null>(null)
   const [avatarPreview,    setAvatarPreview]    = useState<string | null>(null)
   const [uploadingAvatar,  setUploadingAvatar]  = useState(false)
+  const [showEmail, setShowEmail] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -281,7 +282,10 @@ export default function ProfilePage() {
               </button>
             </div>
           )}
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', margin: 0 }}>{user?.email}</p>
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+    <p style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-3)',margin:0}}>{showEmail ? user?.email : '••••••••@' + (user?.email?.split('@')[1] ?? '')}</p>
+    <button onClick={()=>setShowEmail(s=>!s)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--brand)',fontSize:11,fontFamily:'var(--font-mono)',padding:'0 4px'}}>{showEmail ? 'hide' : 'show'}</button>
+  </div>
         </div>
 
         {/* Builder Profile button — brand color always */}

@@ -66,7 +66,7 @@ export default function AuthPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--brand)', marginBottom: 8 }}>§ Authentication</p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--brand)', marginBottom: 8 }}>Authentication</p>
           <h1 style={{ fontWeight: 900, fontSize: 28, letterSpacing: '-0.03em', color: 'var(--text-1)' }}>
             {mode === 'signin' ? 'Sign in.' : 'Create account.'}
           </h1>
