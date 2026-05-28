@@ -153,19 +153,29 @@ export default function ProfilePage() {
     setFetching(true); setProjects([])
     try {
       if (t === 'submitted') {
-        const { data } = await supabase
+        // Get submitted project IDs first
+        const { data: raw } = await supabase
           .from('projects')
-          .select('*, ai_scores(score,risk,confidence,positives,risks)')
+          .select('id')
           .eq('created_by', user.id)
           .order('created_at', { ascending: false })
-        setProjects(shape(data || []))
+        const ids = (raw || []).map((p: any) => p.id)
+        if (!ids.length) { setFetching(false); return }
+        // Fetch full data with counts via API
+        const res = await fetch(`/api/projects?sort=newest&limit=50&t=${Date.now()}`)
+        const d = await res.json()
+        const all = (d.projects || []).filter((p: any) => ids.includes(p.id))
+        setProjects(all)
       } else {
         const map: Record<Tab, string> = { saved: 'save', viewed: 'view', reported: 'report', submitted: '' }
         const { data: ints } = await supabase.from('interactions').select('project_id').eq('user_id', user.id).eq('type', map[t])
         const ids = (ints || []).map((i: any) => i.project_id)
         if (!ids.length) { setFetching(false); return }
-        const { data } = await supabase.from('projects').select('*, ai_scores(score,risk,confidence,positives,risks)').in('id', ids)
-        setProjects(shape(data || []))
+        // Fetch full data with counts via API
+        const res = await fetch(`/api/projects?sort=newest&limit=50&t=${Date.now()}`)
+        const d = await res.json()
+        const filtered = (d.projects || []).filter((p: any) => ids.includes(p.id))
+        setProjects(filtered)
       }
     } catch (e) { console.error(e) }
     setFetching(false)
