@@ -34,21 +34,33 @@ export async function POST(req: NextRequest) {
       category:     project.category,
     }, project.id)
 
-    // Insert new row (don't upsert — keep history, API reads latest by created_at)
-    await supabase.from('ai_scores').insert({
+    // Delete placeholder rows (score=0 pre-save rows)
+    await supabase.from('ai_scores')
+      .delete()
+      .eq('project_id', project.id)
+      .eq('score', 0)
+
+    // Insert final row with tx_hash
+    const { error: insertErr } = await supabase.from('ai_scores').insert({
       project_id:         project.id,
       score:              aiScore.score,
       risk:               aiScore.risk,
       confidence:         aiScore.confidence,
       positives:          aiScore.positives,
       risks:              aiScore.risks,
-      findings:           aiScore.findings    || [],
-      breakdown:          aiScore.breakdown   || null,
-      explanation:        (aiScore as any).explanation || null,
+      findings:           aiScore.findings        || [],
+      breakdown:          aiScore.breakdown        || null,
+      explanation:        aiScore.explanation      || null,
+      tx_hash:            aiScore.tx_hash          || null,
       security_score:     aiScore.breakdown?.security     ?? null,
       transparency_score: aiScore.breakdown?.transparency ?? null,
       created_at:         new Date().toISOString(),
     })
+
+    if (insertErr) {
+      console.error('[re-evaluate] insert error:', insertErr.message)
+      return NextResponse.json({ error: insertErr.message }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true, ai_score: aiScore })
   } catch (err: any) {

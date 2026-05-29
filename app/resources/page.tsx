@@ -4,7 +4,7 @@ import {
   BookOpen, Code2, Zap, Users, ExternalLink,
   TestTube, Gift, Terminal, Globe, Shield,
   Cpu, FlaskConical, Rocket, FileCode2,
-  ChevronDown, ChevronUp, Star,
+  ChevronDown, ChevronUp, Star, LayoutGrid, List,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -13,7 +13,7 @@ const BUILD_STEPS = [
   {
     n: '01', color: '#3B82F6',
     title: 'Understand GenLayer',
-    desc: 'GenLayer is the world\'s first blockchain with Intelligent Contracts — AI-powered smart contracts written in Python that can read the web in real time, call LLMs (like GPT-4 or Llama), and reach consensus across multiple AI validators. Unlike Solidity contracts, they handle ambiguous, real-world logic.',
+    desc: 'GenLayer is the world\'s first blockchain with Intelligent Contracts AI-powered smart contracts written in Python that can read the web in real time, call LLMs (like GPT-4 or Llama), and reach consensus across multiple AI validators. Unlike Solidity contracts, they handle ambiguous, real-world logic.',
     links: [
       { label: 'What is GenLayer?', url: 'https://docs.genlayer.com/understand-genlayer-protocol/what-is-genlayer' },
       { label: 'What are Intelligent Contracts?', url: 'https://docs.genlayer.com/understand-genlayer-protocol/what-are-intelligent-contracts' },
@@ -24,18 +24,19 @@ const BUILD_STEPS = [
   {
     n: '02', color: '#22C55E',
     title: 'Set Up Your Development Environment',
-    desc: 'You write Intelligent Contracts in Python. Install the GenLayer CLI, connect to studionet (the live testnet), and get your wallet funded via the faucet. You can also use GenLayer Studio in the browser — no setup needed — to write and test contracts instantly.',
+    desc: 'You write Intelligent Contracts in Python. Install the GenLayer CLI, connect to studionet (the live testnet), and get your wallet funded via the faucet. You can also use GenLayer Studio in the browser no setup needed to write and test contracts instantly.',
     links: [
       { label: 'Development setup guide', url: 'https://docs.genlayer.com/developers/intelligent-contracts/tooling-setup' },
       { label: 'GenLayer Studio (browser IDE + faucet)', url: 'https://studio.genlayer.com' },
-      { label: 'Networks & RPC endpoints', url: 'https://docs.genlayer.com/developers/networks' },
+      { label: 'Networks & RPC endpoints (Studionet + Bradbury)', url: 'https://docs.genlayer.com/developers/networks' },
       { label: 'GenLayer CLI reference', url: 'https://docs.genlayer.com/api-references/genlayer-cli' },
+      { label: 'Bradbury testnet explorer', url: 'https://explorer-bradbury.genlayer.com' },
     ],
   },
   {
     n: '03', color: '#F59E0B',
     title: 'Write Your First Contract',
-    desc: 'Intelligent Contracts are Python classes that extend `gl.Contract`. Use `@gl.public.view` for read methods and `@gl.public.write` for state-changing ones. Put all non-deterministic logic (LLM calls, web fetches) inside a `nondet` block — this is how GenLayer handles AI consensus safely.',
+    desc: 'Intelligent Contracts are Python classes that extend `gl.Contract`. Use `@gl.public.view` for read methods and `@gl.public.write` for state-changing ones. Put all non-deterministic logic (LLM calls, web fetches) inside a `nondet` block this is how GenLayer handles AI consensus safely.',
     links: [
       { label: 'Your first contract (basic storage)', url: 'https://docs.genlayer.com/developers/intelligent-contracts/first-contract' },
       { label: 'Your first Intelligent Contract (with LLM)', url: 'https://docs.genlayer.com/developers/intelligent-contracts/first-intelligent-contract' },
@@ -47,7 +48,7 @@ const BUILD_STEPS = [
   {
     n: '04', color: '#8B5CF6',
     title: 'Use AI & Web Features',
-    desc: 'Call any LLM (GPT-4o, Claude, Llama 3) directly from your contract. Fetch live data from any URL or API. Use the Equivalence Principle — GenLayer\'s consensus checks whether all validator outputs are "equivalent enough", not byte-identical. This lets your contracts reason about real-world data.',
+    desc: 'Call any LLM (GPT-4o, Claude, Llama 3) directly from your contract. Fetch live data from any URL or API. Use the Equivalence Principle GenLayer\'s consensus checks whether all validator outputs are "equivalent enough", not byte-identical. This lets your contracts reason about real-world data.',
     links: [
       { label: 'Calling LLMs from contracts', url: 'https://docs.genlayer.com/developers/intelligent-contracts/features/calling-llms' },
       { label: 'Web access in contracts', url: 'https://docs.genlayer.com/developers/intelligent-contracts/features/web-access' },
@@ -70,18 +71,19 @@ const BUILD_STEPS = [
   {
     n: '06', color: '#14B8A6',
     title: 'Deploy to Studionet',
-    desc: 'Deploy using the CLI (`genlayer deploy`), a deploy script in JavaScript/TypeScript via genlayer-js, or directly from the Studio UI. Point to the studionet RPC endpoint. After deployment you get a contract address — use it to read state and write transactions from your frontend via genlayer-js.',
+    desc: 'Deploy using the CLI (`genlayer deploy`), a deploy script in JavaScript/TypeScript via genlayer-js, or directly from the Studio UI. Point to the studionet RPC endpoint. After deployment you get a contract address use it to read state and write transactions from your frontend via genlayer-js.',
     links: [
       { label: 'Deploying contracts overview', url: 'https://docs.genlayer.com/developers/intelligent-contracts/deploying' },
       { label: 'CLI deployment', url: 'https://docs.genlayer.com/developers/intelligent-contracts/deploying/cli-deployment' },
       { label: 'Deploy scripts (JS/TS)', url: 'https://docs.genlayer.com/developers/intelligent-contracts/deploying/deploy-scripts' },
-      { label: 'Network configuration', url: 'https://docs.genlayer.com/developers/intelligent-contracts/deploying/network-configuration' },
+      { label: 'Network configuration (Studionet + Bradbury)', url: 'https://docs.genlayer.com/developers/intelligent-contracts/deploying/network-configuration' },
+      { label: 'Bradbury testnet explorer', url: 'https://explorer-bradbury.genlayer.com' },
     ],
   },
   {
     n: '07', color: '#F97316',
     title: 'Build Your Frontend (DApp)',
-    desc: 'Connect your UI to GenLayer using `genlayer-js`. Use `createClient` with the studionet chain. Call `readContract` for queries (free, instant) and `writeContract` to send transactions. Poll for transaction receipts to track on-chain execution. Works with React, Next.js, Vue — any JS framework.',
+    desc: 'Connect your UI to GenLayer using `genlayer-js`. Use `createClient` with the studionet chain. Call `readContract` for queries (free, instant) and `writeContract` to send transactions. Poll for transaction receipts to track on-chain execution. Works with React, Next.js, Vue any JS framework.',
     links: [
       { label: 'DApp development workflow', url: 'https://docs.genlayer.com/developers/dapp-development-workflow' },
       { label: 'genlayer-js SDK', url: 'https://docs.genlayer.com/api-references/genLayerjs' },
@@ -108,14 +110,14 @@ const QUICK = [
   {
     icon: BookOpen, color: '#3B82F6',
     name: 'Official Docs',
-    desc: 'Full technical documentation — protocol, contracts, SDK, CLI, and API references.',
+    desc: 'Full technical documentation protocol, contracts, SDK, CLI, and API references.',
     url: 'https://docs.genlayer.com',
     label: 'docs.genlayer.com',
   },
   {
     icon: TestTube, color: '#22C55E',
     name: 'GenLayer Studio',
-    desc: 'Browser-based IDE. Write, simulate, deploy, and get testnet tokens — no setup needed.',
+    desc: 'Browser-based IDE. Write, simulate, deploy, and get testnet tokens no setup needed.',
     url: 'https://studio.genlayer.com',
     label: 'studio.genlayer.com',
   },
@@ -164,7 +166,7 @@ const QUICK = [
   {
     icon: Cpu, color: '#0EA5E9',
     name: 'GenLayer Skills',
-    desc: 'Pre-built AI skills you can plug into your Intelligent Contracts — oracles, evaluators, and more.',
+    desc: 'Pre-built AI skills you can plug into your Intelligent Contracts oracles, evaluators, and more.',
     url: 'https://skills.genlayer.com',
     label: 'skills.genlayer.com',
   },
@@ -185,7 +187,7 @@ const QUICK = [
   {
     icon: Star, color: '#F59E0B',
     name: 'Project Boilerplate',
-    desc: 'Starter templates for DApps on GenLayer — includes contract, deploy script, and frontend.',
+    desc: 'Starter templates for DApps on GenLayer includes contract, deploy script, and frontend.',
     url: 'https://docs.genlayer.com/developers/project-boilerplate',
     label: 'Project Boilerplate',
   },
@@ -248,6 +250,8 @@ function StepCard({ step, open, toggle }: { step: typeof BUILD_STEPS[0]; open: b
 
 export default function ResourcesPage() {
   const [openStep, setOpenStep] = useState<number | null>(0)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [stepView, setStepView] = useState<'list' | 'grid'>('list')
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 24px 80px' }}>
@@ -261,7 +265,7 @@ export default function ResourcesPage() {
           Build on GenLayer
         </h1>
         <p style={{ fontSize: 15, color: 'var(--text-2)', maxWidth: 560, lineHeight: 1.75 }}>
-          Everything you need to go from zero to a live Intelligent Contract on GenLayer —
+          Everything you need to go from zero to a live Intelligent Contract on GenLayer  
           step by step. GenLayer lets you write AI-powered smart contracts in Python that
           read the web, call LLMs, and reach consensus on-chain.
         </p>
@@ -269,87 +273,155 @@ export default function ResourcesPage() {
 
       {/* Step-by-step guide */}
       <div style={{ marginBottom: 56 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <Rocket size={16} color="var(--brand)" />
-          <h2 style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text-1)', margin: 0 }}>
-            Step-by-Step: How to Build on GenLayer
-          </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Rocket size={16} color="var(--brand)" />
+            <h2 style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text-1)', margin: 0 }}>
+              Step-by-Step: How to Build on GenLayer
+            </h2>
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button onClick={() => setStepView('list')} style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px',
+              borderRadius: 8, border: '1px solid var(--border-hi)', cursor: 'pointer',
+              background: stepView === 'list' ? 'var(--brand)' : 'transparent',
+              color: stepView === 'list' ? '#fff' : 'var(--text-2)', fontSize: 12, fontWeight: 600,
+            }}>
+              <List size={12} /> List
+            </button>
+            <button onClick={() => setStepView('grid')} style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px',
+              borderRadius: 8, border: '1px solid var(--border-hi)', cursor: 'pointer',
+              background: stepView === 'grid' ? 'var(--brand)' : 'transparent',
+              color: stepView === 'grid' ? '#fff' : 'var(--text-2)', fontSize: 12, fontWeight: 600,
+            }}>
+              <LayoutGrid size={12} /> Grid
+            </button>
+          </div>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 20, lineHeight: 1.65 }}>
           Follow these 8 steps from understanding the protocol all the way to submitting your project and earning builder rewards. Click any step to expand it.
         </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {BUILD_STEPS.map((step, i) => (
-            <StepCard
-              key={step.n}
-              step={step}
-              open={openStep === i}
-              toggle={() => setOpenStep(openStep === i ? null : i)}
-            />
-          ))}
-        </div>
+        {stepView === 'list' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {BUILD_STEPS.map((step, i) => (
+              <StepCard
+                key={step.n}
+                step={step}
+                open={openStep === i}
+                toggle={() => setOpenStep(openStep === i ? null : i)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+            {BUILD_STEPS.map((step) => (
+              <div key={step.n} style={{ padding: '20px', background: 'var(--bg-card)', border: `1px solid ${step.color}30`, borderRadius: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: `${step.color}18`, border: `1px solid ${step.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: step.color, fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
+                    {step.n}
+                  </div>
+                  <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-1)', margin: 0 }}>{step.title}</p>
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.7, marginBottom: 12 }}>{step.desc}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {step.links.map(l => (
+                    <a key={l.url} href={l.url} target={l.url.startsWith('/') ? '_self' : '_blank'} rel="noopener noreferrer"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: step.color, textDecoration: 'none', fontFamily: 'var(--font-mono)' }}>
+                      <ExternalLink size={9} /> {l.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Quick access cards */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <Zap size={16} color="var(--brand)" />
-          <h2 style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text-1)', margin: 0 }}>
-            Quick Access
-          </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Zap size={16} color="var(--brand)" />
+            <h2 style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text-1)', margin: 0 }}>
+              Quick Access
+            </h2>
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button onClick={() => setViewMode('grid')} style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px',
+              borderRadius: 8, border: '1px solid var(--border-hi)', cursor: 'pointer',
+              background: viewMode === 'grid' ? 'var(--brand)' : 'transparent',
+              color: viewMode === 'grid' ? '#fff' : 'var(--text-2)', fontSize: 12, fontWeight: 600,
+            }}>
+              <LayoutGrid size={12} /> Grid
+            </button>
+            <button onClick={() => setViewMode('list')} style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px',
+              borderRadius: 8, border: '1px solid var(--border-hi)', cursor: 'pointer',
+              background: viewMode === 'list' ? 'var(--brand)' : 'transparent',
+              color: viewMode === 'list' ? '#fff' : 'var(--text-2)', fontSize: 12, fontWeight: 600,
+            }}>
+              <List size={12} /> List
+            </button>
+          </div>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 20 }}>
           All the key links in one place.
         </p>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: 12,
-        }}>
-          {QUICK.map(({ icon: Icon, color, name, desc, url, label }) => (
-            <a key={name} href={url}
-              target={url.startsWith('/') ? '_self' : '_blank'}
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex', flexDirection: 'column',
-                padding: '18px 20px',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderRadius: 10,
-                textDecoration: 'none',
-                transition: 'border-color .15s, transform .15s',
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLElement
-                el.style.borderColor = 'var(--border-hi)'
-                el.style.transform   = 'translateY(-2px)'
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLElement
-                el.style.borderColor = 'var(--border)'
-                el.style.transform   = 'translateY(0)'
-              }}
-            >
-              <div style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: `${color}18`, border: `1px solid ${color}30`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color, marginBottom: 12,
-              }}>
-                <Icon size={18} />
-              </div>
-              <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-1)', marginBottom: 6 }}>
-                {name}
-              </p>
-              <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.65, flex: 1 }}>
-                {desc}
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 12, fontSize: 11, color, fontFamily: 'var(--font-mono)' }}>
-                <ExternalLink size={10} /> {label}
-              </div>
-            </a>
-          ))}
-        </div>
+        {viewMode === 'grid' ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+            {QUICK.map(({ icon: Icon, color, name, desc, url, label }) => (
+              <a key={name} href={url}
+                target={url.startsWith('/') ? '_self' : '_blank'}
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', flexDirection: 'column', padding: '18px 20px',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                  borderRadius: 10, textDecoration: 'none', transition: 'border-color .15s, transform .15s',
+                }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--border-hi)'; el.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--border)'; el.style.transform = 'translateY(0)' }}
+              >
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: `${color}18`, border: `1px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, marginBottom: 12 }}>
+                  <Icon size={18} />
+                </div>
+                <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-1)', marginBottom: 6 }}>{name}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.65, flex: 1 }}>{desc}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 12, fontSize: 11, color, fontFamily: 'var(--font-mono)' }}>
+                  <ExternalLink size={10} /> {label}
+                </div>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {QUICK.map(({ icon: Icon, color, name, desc, url, label }) => (
+              <a key={name} href={url}
+                target={url.startsWith('/') ? '_self' : '_blank'}
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                  borderRadius: 10, textDecoration: 'none', transition: 'border-color .15s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-hi)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
+              >
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: `${color}18`, border: `1px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
+                  <Icon size={16} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-1)', margin: 0, marginBottom: 2 }}>{name}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{desc}</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color, fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
+                  <ExternalLink size={10} /> {label}
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
     </div>

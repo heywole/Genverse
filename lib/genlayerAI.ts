@@ -1,15 +1,14 @@
 import type { AIScore, SubmitProjectPayload } from '@/types'
 import { scanProject, type ScannerSignals } from './scanner'
+import { createClient } from '@supabase/supabase-js'
 
 function clean(s: string, max: number) {
   return (s || '').replace(/[<>{}[\]]/g, '').trim().slice(0, max)
 }
 
 function sanitizeAddress(addr: string): `0x${string}` {
-  // Remove any leading zeros or extra characters before 0x
   const match = addr.match(/0x[0-9a-fA-F]{40}/)
   if (match) return match[0] as `0x${string}`
-  // Strip all non-hex then add 0x
   const hex = addr.replace(/^0+x/, '').replace(/[^0-9a-fA-F]/g, '')
   return `0x${hex}` as `0x${string}`
 }
@@ -29,15 +28,10 @@ export async function evaluateProject(
     throw new Error('GENLAYER_CONTRACT_ADDRESS and GENLAYER_PRIVATE_KEY must be set.')
   }
 
-  // Private key: just ensure 0x prefix, never strip characters
-  const privateKey = (privateKeyRaw.startsWith('0x')
-    ? privateKeyRaw
-    : `0x${privateKeyRaw}`) as `0x${string}`
-
-  // Contract address: sanitize to handle any double-prefix typos
+  const privateKey   = (privateKeyRaw.startsWith('0x') ? privateKeyRaw : `0x${privateKeyRaw}`) as `0x${string}`
   const contractAddr = sanitizeAddress(contractAddress)
 
-  // ── Step 1: Scanner returns raw signals only ──────────
+  // ── Step 1: Scanner ───────────────────────────────────
   console.log(`[Scanner] Scanning ${project.website_url}...`)
   let signals: ScannerSignals
 
@@ -50,19 +44,16 @@ export async function evaluateProject(
       project.telegram_url,
       (project as any).discord_url,
     )
-    console.log(`[Scanner] Done. Signals:`, {
+    console.log(`[Scanner] Done.`, {
       phishing:      signals.phishing_detected,
       unsafe_wallet: signals.unsafe_wallet_behavior,
       scripts:       signals.suspicious_scripts,
       redirects:     signals.hidden_redirects,
       has_github:    signals.has_github,
       has_docs:      signals.has_docs,
-      has_twitter:   signals.has_twitter,
-      has_telegram:  signals.has_telegram,
-      has_discord:   signals.has_discord,
     })
   } catch (e: any) {
-    console.warn('[Scanner] Scanner failed, using defaults:', e.message)
+    console.warn('[Scanner] Failed, using defaults:', e.message)
     signals = {
       phishing_detected: false, suspicious_scripts: false,
       wallet_present: false, unsafe_wallet_behavior: false,
@@ -78,14 +69,14 @@ export async function evaluateProject(
     }
   }
 
-  // ── Step 2: Send raw signals to GenLayer contract ─────
+  // ── Step 2: Send to GenLayer contract ─────────────────
   const gljs   = await import('genlayer-js')
   const chains = await import('genlayer-js/chains')
-  const { createClient, createAccount } = gljs
+  const { createClient: createGLClient, createAccount } = gljs
   const { studionet } = chains
 
   const account = createAccount(privateKey)
-  const client  = createClient({ chain: studionet, account })
+  const client  = createGLClient({ chain: studionet, account })
 
   const signalPayload = JSON.stringify({
     website_unreachable:    signals.website_unreachable,
@@ -105,7 +96,7 @@ export async function evaluateProject(
     website_preview:        signals.website_html.slice(0, 500),
   })
 
-  console.log(`[GenLayer] Sending signals to contract for scoring...`)
+  console.log(`[GenLayer] Sending signals to contract...`)
 
   let txHash: string
   try {
@@ -123,14 +114,44 @@ export async function evaluateProject(
       ],
       value: 0n,
     })
-    console.log(`[GenLayer] TX: ${txHash}`)
+    console.log(`[GenLayer] TX submitted: ${txHash}`)
+
+    // ── SAVE TX HASH IMMEDIATELY to DB ─────────────────────────────
+    // Do this right after the tx is sent — before polling —
+    // so the explorer link works even if Vercel times out during polling.
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { persistSession: false } }
+      )
+      // Insert a pending ai_scores row with just the tx_hash and fallback score.
+      // If polling succeeds below, submit-project will insert the final real row.
+      // We use upsert so if the row already exists we just update tx_hash.
+      await supabase.from('ai_scores').upsert({
+        project_id:  projectId,
+        score:       0,          // placeholder — real score comes after polling
+        risk:        'Medium',   // placeholder
+        confidence:  'Low',      // placeholder
+        positives:   [],
+        risks:       [],
+        findings:    [],
+        tx_hash:     txHash,
+        created_at:  new Date().toISOString(),
+      }, { onConflict: 'project_id', ignoreDuplicates: false })
+      console.log(`[GenLayer] tx_hash saved to DB: ${txHash}`)
+    } catch (dbErr: any) {
+      // Non-fatal — polling will still save the final row
+      console.warn('[GenLayer] Could not pre-save tx_hash:', dbErr.message)
+    }
+
   } catch (e: any) {
     console.error('[GenLayer] TX send failed:', e.message)
     console.log('[GenLayer] Using fallback score from scanner signals')
     return buildFallbackScore(signals)
   }
 
-  // ── Step 3: Poll for result ───────────────────────────
+  // ── Step 3: Poll for consensus result ────────────────
   for (let i = 0; i < 180; i++) {
     await sleep(5000)
     try {
@@ -141,9 +162,9 @@ export async function evaluateProject(
       }) as string
 
       if (raw && raw !== '{}' && raw !== 'null' && String(raw).length > 5) {
-        console.log(`[GenLayer] Got result on attempt ${i + 1}`)
+        console.log(`[GenLayer] Consensus result on attempt ${i + 1}`)
         const data = typeof raw === 'string' ? JSON.parse(raw) : raw
-        console.log(`[GenLayer] Contract score: ${data.score} | Risk: ${data.risk}`)
+        console.log(`[GenLayer] score=${data.score} risk=${data.risk}`)
 
         return {
           score:       Number(data.score),
@@ -151,18 +172,23 @@ export async function evaluateProject(
           confidence:  data.confidence,
           positives:   Array.isArray(data.positives) ? data.positives.slice(0, 5) : [],
           risks:       Array.isArray(data.risks)     ? data.risks.slice(0, 5)     : [],
-          breakdown:   data.breakdown ?? null,
+          breakdown:   data.breakdown   ?? null,
           findings:    Array.isArray(data.findings)  ? data.findings.slice(0, 5)  : [],
           explanation: data.explanation ?? '',
-          tx_hash:     txHash,
+          tx_hash:     txHash,   // always carry the real tx hash through
         }
       }
     } catch { /* keep polling */ }
     if (i % 12 === 0 && i > 0) console.log(`[GenLayer] Still waiting... attempt ${i}`)
   }
 
-  console.warn('[GenLayer] Timed out — using fallback')
-  return buildFallbackScore(signals)
+  console.warn('[GenLayer] Timed out — using fallback score, tx_hash preserved')
+  // Even on timeout, return the fallback score WITH the real tx_hash
+  // so the explorer link still works on the project page
+  return {
+    ...buildFallbackScore(signals),
+    tx_hash: txHash,
+  }
 }
 
 function buildFallbackScore(signals: ScannerSignals): AIScore {
@@ -201,7 +227,7 @@ function buildFallbackScore(signals: ScannerSignals): AIScore {
       transparency: 100 - (!signals.has_github ? 10 : 0) - (!signals.has_docs ? 5 : 0),
       community:    100 - (!signals.has_twitter ? 3 : 0) - (!signals.has_telegram ? 3 : 0) - (!signals.has_discord ? 3 : 0),
     },
-    findings: risks,
+    findings:    risks,
     explanation: `Scanner found no security threats. Score deductions: ${risks.join(', ') || 'none'}.`,
-  } as AIScore
+  }
 }

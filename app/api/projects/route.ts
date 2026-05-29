@@ -33,23 +33,24 @@ export async function GET(req: NextRequest) {
 
     const ids = projects.map(p => p.id)
 
-    // AI scores — pick highest per project
+    // AI scores — pick most recent per project
     const { data: scores, error: sErr } = await supabase
       .from('ai_scores')
-      .select('project_id, score, risk, confidence, positives, risks, findings, breakdown, explanation')
+      .select('project_id, score, risk, confidence, positives, risks, findings, breakdown, explanation, tx_hash')
       .in('project_id', ids)
+      .order('created_at', { ascending: false })
 
     if (sErr) console.error('[api/projects] ai_scores error:', sErr.message)
 
+    // Pick the most recent score per project (first = most recent due to order above)
     const scoreMap: Record<string, any> = {}
     for (const s of scores || []) {
-      const existing = scoreMap[s.project_id]
-      if (!existing || Number(s.score) > Number(existing.score)) {
+      if (!scoreMap[s.project_id]) {
         scoreMap[s.project_id] = s
       }
     }
 
-    // Interaction counts (views, saves, reports)
+    // Interaction counts
     const { data: ints } = await supabase
       .from('interactions')
       .select('project_id, type')
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
       if (type === 'report') countMap[project_id].reports++
     }
 
-    // Vote counts (up / down)
+    // Vote counts
     const { data: votes } = await supabase
       .from('votes')
       .select('project_id, vote_type')
@@ -80,9 +81,9 @@ export async function GET(req: NextRequest) {
 
     let result = projects.map(p => ({
       ...p,
-      ai_score:   scoreMap[p.id] ?? null,
-      _count:     countMap[p.id] ?? { views: 0, saves: 0, reports: 0 },
-      _votes:     voteMap[p.id]  ?? { up: 0, down: 0 },
+      ai_score: scoreMap[p.id] ?? null,
+      _count:   countMap[p.id] ?? { views: 0, saves: 0, reports: 0 },
+      _votes:   voteMap[p.id]  ?? { up: 0, down: 0 },
     }))
 
     if (sort === 'score')  result.sort((a, b) => (b.ai_score?.score ?? -1) - (a.ai_score?.score ?? -1))

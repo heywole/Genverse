@@ -56,7 +56,7 @@ export function Navbar({ session: initialSession }: Props) {
           <img
             src={isDark ? '/logo-dark.svg' : '/logo-light.svg'}
             alt="GenScout"
-            style={{ height: 34, width: 'auto', objectFit: 'contain', display: 'block' }}
+            style={{ height: 44, width: 'auto', objectFit: 'contain', display: 'block' }}
             onError={e => {
               // fallback: try png, then hide
               const img = e.target as HTMLImageElement
@@ -69,9 +69,9 @@ export function Navbar({ session: initialSession }: Props) {
           />
         ) : (
           // SSR placeholder keeps layout stable before hydration
-          <div style={{ height: 34, width: 34 }} />
+          <div style={{ height: 44, width: 44 }} />
         )}
-        <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.03em', color: 'var(--text-1)' }}>
+        <span style={{ fontWeight: 900, fontSize: 21, letterSpacing: '-0.04em', color: 'var(--text-1)' }}>
           GenScout
         </span>
       </Link>
