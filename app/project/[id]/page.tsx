@@ -9,6 +9,7 @@ import { ProjectChat }         from '@/components/ProjectChat'
 import { VoteButtons }         from '@/components/VoteButtons'
 import { SaveButton }          from '@/components/SaveButton'
 import { ProjectDetailClient } from '@/components/ProjectDetailClient'
+import { ProjectPageAutoRefresh } from '@/components/ProjectPageAutoRefresh'
 import { ProjectTabs }         from '@/components/ProjectTabs'
 
 async function getProject(id: string) {
@@ -219,6 +220,8 @@ export default async function ProjectPage({ params }: { params: { id: string } }
   )
 
   return (
+    <>
+    <ProjectPageAutoRefresh hasScore={hasScore} />
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 20px 80px' }}>
 
       <Link href="/explore" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-3)', textDecoration: 'none', marginBottom: 18, fontFamily: 'var(--font-mono)' }}>
@@ -272,5 +275,6 @@ export default async function ProjectPage({ params }: { params: { id: string } }
         builderId={project.created_by ?? ''}
       />
     </div>
+  </>
   )
 }
