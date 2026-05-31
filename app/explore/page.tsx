@@ -46,7 +46,14 @@ export default function ExplorePage() {
   // Initial load + 20s live refresh
   useEffect(() => {
     load('', 'All', 'All', 'score')
-    const id = setInterval(() => load(search, category, risk, sort, true), 20000)
+    const id = setInterval(async () => {
+      load(search, category, risk, sort, true)
+      try {
+        const res = await fetch('/api/projects?sort=newest&limit=100&t=' + Date.now())
+        const d = await res.json()
+        window.dispatchEvent(new CustomEvent('projects-refreshed', { detail: { projects: d.projects || [] } }))
+      } catch {}
+    }, 8000)
     return () => clearInterval(id)
   }, [])
 

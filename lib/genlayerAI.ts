@@ -112,7 +112,7 @@ export async function evaluateProject(
         clean(project.category,    50),
         clean(signalPayload,       2000),
       ],
-      value: 0n,
+      value: BigInt(0),
     })
     console.log(`[GenLayer] TX submitted: ${txHash}`)
 
@@ -125,21 +125,9 @@ export async function evaluateProject(
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         { auth: { persistSession: false } }
       )
-      // Insert a pending ai_scores row with just the tx_hash and fallback score.
-      // If polling succeeds below, submit-project will insert the final real row.
-      // We use upsert so if the row already exists we just update tx_hash.
-      await supabase.from('ai_scores').upsert({
-        project_id:  projectId,
-        score:       0,          // placeholder — real score comes after polling
-        risk:        'Medium',   // placeholder
-        confidence:  'Low',      // placeholder
-        positives:   [],
-        risks:       [],
-        findings:    [],
-        tx_hash:     txHash,
-        created_at:  new Date().toISOString(),
-      }, { onConflict: 'project_id', ignoreDuplicates: false })
-      console.log(`[GenLayer] tx_hash saved to DB: ${txHash}`)
+      // tx_hash is saved in the final insert after polling
+      // Empty ai_scores = evaluating; one row with real score = done
+      console.log(`[GenLayer] TX hash: ${txHash}`)
     } catch (dbErr: any) {
       // Non-fatal — polling will still save the final row
       console.warn('[GenLayer] Could not pre-save tx_hash:', dbErr.message)
@@ -208,13 +196,20 @@ function buildFallbackScore(signals: ScannerSignals): AIScore {
 
   score = Math.max(0, Math.min(100, score))
 
+  const s: any = signals  // cast for optional fields
   const positives: string[] = []
-  if (!signals.phishing_detected)      positives.push('No phishing patterns detected')
-  if (!signals.suspicious_scripts)     positives.push('No malicious scripts detected')
-  if (!signals.unsafe_wallet_behavior) positives.push('No unsafe wallet behavior detected')
+  if (!s.goplus_flagged && !s.safe_browsing_flagged && !s.scamsniffer_flagged)
+                               positives.push('Not flagged by any threat intelligence database (GoPlus, Safe Browsing, ScamSniffer)')
+  if (!signals.phishing_detected)      positives.push('No phishing patterns detected in website code')
+  if (!signals.suspicious_scripts)     positives.push('No obfuscated or malicious scripts detected')
+  if (!signals.unsafe_wallet_behavior) positives.push('No unsafe wallet approval patterns detected')
   if (!signals.hidden_redirects)       positives.push('No hidden redirects detected')
-  if (!signals.website_unreachable)    positives.push('Website is accessible and reachable')
-  if (signals.has_github)              positives.push('Public GitHub repository found')
+  if (!signals.website_unreachable)    positives.push('Website is live and accessible')
+  if (s.ssl_valid !== false)           positives.push('HTTPS/SSL certificate is valid')
+  if (signals.has_github)              positives.push('Public GitHub repository linked and verified')
+  if (signals.recently_active)         positives.push('GitHub repository was recently active (within 6 months)')
+  if (signals.has_twitter)             positives.push('Twitter/X account linked')
+  if (!s.has_honeypot_patterns)        positives.push('No honeypot or fake reward patterns found')
 
   return {
     score,

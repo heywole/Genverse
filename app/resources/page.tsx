@@ -94,10 +94,10 @@ const BUILD_STEPS = [
   },
   {
     n: '08', color: '#6366F1',
-    title: 'Submit to GenScout & Earn Rewards',
-    desc: 'Once your project is live, submit it to GenScout to get an AI trust score evaluated on-chain by GenLayer validators. Then apply to the Builder Program via the GenLayer Portal to earn rewards for shipping real projects on the ecosystem. Early builders get priority access to grants and recognition.',
+    title: 'Submit to GenVerse & Earn Rewards',
+    desc: 'Once your project is live, submit it to GenVerse to get an AI trust score evaluated on-chain by GenLayer validators. Then apply to the Builder Program via the GenLayer Portal to earn rewards for shipping real projects on the ecosystem. Early builders get priority access to grants and recognition.',
     links: [
-      { label: 'Submit your project to GenScout', url: '/submit' },
+      { label: 'Submit your project to GenVerse', url: '/submit' },
       { label: 'GenLayer Builder Portal', url: 'https://portal.genlayer.foundation/#/builders/resources' },
       { label: 'Ecosystem & grants', url: 'https://www.genlayer.com/ecosystem' },
       { label: 'Community (Discord, X, Telegram)', url: 'https://www.genlayer.com/ecosystem#community' },

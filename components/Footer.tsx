@@ -10,7 +10,7 @@ export function Footer() {
       flexWrap: 'wrap',
     }}>
       <p style={{ fontSize: 13, color: 'var(--text-3)' }}>
-        © {new Date().getFullYear()} GenScout. All rights reserved.
+        © {new Date().getFullYear()} GenVerse. All rights reserved.
       </p>
       <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
         <a href="https://x.com/heywole" target="_blank" rel="noopener noreferrer"
@@ -20,7 +20,7 @@ export function Footer() {
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
           </svg>
         </a>
-        <a href="https://github.com/heywole/genscout" target="_blank" rel="noopener noreferrer"
+        <a href="https://github.com/heywole/genverse" target="_blank" rel="noopener noreferrer"
           style={{ display: 'flex', alignItems: 'center', color: 'var(--text-3)', textDecoration: 'none' }}
           title="View on GitHub">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">

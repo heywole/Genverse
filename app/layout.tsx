@@ -8,7 +8,7 @@ import { Footer }         from '@/components/Footer'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'GenScout',
+  title: 'GenVerse',
   description: 'Community-driven discovery platform for GenLayer ecosystem projects. AI-evaluated. Community-rated.',
   viewport: 'width=device-width, initial-scale=1',
   icons: {

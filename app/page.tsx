@@ -14,11 +14,15 @@ async function fetchLatestEvaluation() {
     })
     const d = await res.json()
     const all: Project[] = d.projects ?? []
-    // Find the most recently evaluated project that has an AI score
-    const evaluated = all.filter(p => p.ai_score).sort((a, b) =>
+    if (!all.length) return null
+    // Sort by newest first
+    const sorted = [...all].sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
-    return evaluated[0] ?? null
+    // Prefer project with real score (score > 0)
+    const withScore = sorted.filter(p => p.ai_score && Number(p.ai_score.score) > 0)
+    // Always return something — real score or newest project (shows real name during evaluation)
+    return withScore[0] ?? sorted[0]
   } catch {
     return null
   }
@@ -37,7 +41,7 @@ function AIScanner() {
     return () => clearInterval(id)
   }, [])
 
-  function buildSteps(p: Project | null, txHash?: string | null) {
+  function buildSteps(p: Project | null, realTxHash?: string | null) {
     const ai = p?.ai_score
     const score = ai ? Number(ai.score) : 76
     const risk  = ai ? ai.risk : 'Low'
@@ -56,12 +60,12 @@ function AIScanner() {
     const scripts   = risks.some(r => r.toLowerCase().includes('script') || r.toLowerCase().includes('obfusc'))
     const wallet    = risks.some(r => r.toLowerCase().includes('wallet'))
 
-    const twitterStatus  = `Twitter: ${hasTwitter ? '✓' : '✗' + ' [-3]'}  Telegram: ${hasTelegram ? '✓' : '✗ [-3]'}  Discord: ${hasDiscord ? '✓' : '✗ [-3]'}`
+    const twitterStatus  = `Twitter: ${hasTwitter ? '✓' : '✗ [-3]'}  Telegram: ${hasTelegram ? '✓' : '✗ [-3]'}  Discord: ${hasDiscord ? '✓' : '✗ [-3]'}`
     const githubStatus   = hasGithub ? '> GitHub repository... FOUND ✓' : '> GitHub repository... NOT FOUND [-10]'
     const docsStatus     = hasDocs   ? '> Documentation... FOUND ✓'      : '> Documentation... NOT FOUND [-5]'
 
     return [
-      { text: `$ genscout-eval --project "${name}"`,         color: 'var(--text-3)',  delay: 0 },
+      { text: `$ genverse-eval --project "${name}"`,         color: 'var(--text-3)',  delay: 0 },
       { text: '> Connecting to GenLayer studionet...',        color: 'var(--text-2)', delay: 700 },
       { text: `> Scanning ${(p?.website_url ?? 'website').replace(/^https?:\/\//, '').slice(0, 36)}...`, color: 'var(--text-2)', delay: 1200 },
       { text: `> Phishing check... ${phishing ? '⚠ DETECTED [-25]' : 'OK ✓'}`,  color: phishing  ? '#D97706' : '#22C55E', delay: 1900 },
@@ -69,15 +73,15 @@ function AIScanner() {
       { text: `> Obfuscated scripts... ${scripts ? '⚠ FOUND [-15]' : 'OK ✓'}`,  color: scripts   ? '#D97706' : '#22C55E', delay: 3100 },
       { text: githubStatus,  color: hasGithub ? '#22C55E' : '#D97706', delay: 3700 },
       { text: docsStatus,    color: hasDocs   ? '#22C55E' : '#D97706', delay: 4200 },
-      { text: `> ${twitterStatus}`,                           color: '#D97706',       delay: 4700 },
+      { text: `> ${twitterStatus}`, color: (hasTwitter && hasTelegram && hasDiscord) ? '#22C55E' : '#D97706', delay: 4700 },
       { text: '> Sending raw signals to GenLayer validators...', color: '#3B82F6',    delay: 5400 },
       {
-        text: txHash
-          ? `TX: ${txHash.slice(0,10)}...${txHash.slice(-6)} → GenLayer Explorer ↗`
+        text: realTxHash
+          ? `TX: ${realTxHash.slice(0,10)}...${realTxHash.slice(-6)} → GenLayer Explorer ↗`
           : 'TX: view on GenLayer Explorer ↗',
         color: '#3B82F6',
-        tx: txHash
-          ? `https://explorer-studio.genlayer.com/tx/${txHash}`
+        tx: realTxHash
+          ? `https://explorer-studio.genlayer.com/tx/${realTxHash}`
           : 'https://explorer-studio.genlayer.com/txs',
         delay: 6100,
       },
@@ -107,7 +111,7 @@ function AIScanner() {
     async function cycle() {
       const p = await fetchLatestEvaluation()
       setProject(p)
-      const steps = buildSteps(p, (p?.ai_score as any)?.tx_hash)
+      const steps = buildSteps(p, p?.ai_score?.tx_hash ?? null)
       runAnimation(steps)
       // Restart after the last step + 3s pause
       const lastDelay = steps[steps.length - 1].delay
@@ -121,7 +125,7 @@ function AIScanner() {
     }
   }, [])
 
-  const steps = buildSteps(project, (project?.ai_score as any)?.tx_hash)
+  const steps = buildSteps(project, project?.ai_score?.tx_hash ?? null)
 
   return (
     <div style={{ background: '#111', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 16px 40px rgba(0,0,0,0.25)' }}>
@@ -129,7 +133,7 @@ function AIScanner() {
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#EF4444' }} />
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#EAB308' }} />
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22C55E' }} />
-        <span style={{ flex: 1, textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-mono)' }}>genscout — ai-evaluator</span>
+        <span style={{ flex: 1, textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-mono)' }}>genverse — ai-evaluator</span>
         <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#22C55E', animation: 'pulse 2s infinite' }} />
       </div>
       <div ref={ref} style={{ height: 230, overflowY: 'auto', padding: '12px 14px', scrollbarWidth: 'none' }}>
@@ -177,7 +181,14 @@ export default function HomePage() {
 
   useEffect(() => {
     loadProjects()
-    const id = setInterval(loadProjects, 20000)
+    const id = setInterval(async () => {
+      await loadProjects()
+      try {
+        const res = await fetch('/api/projects?sort=views&limit=50&t=' + Date.now())
+        const d = await res.json()
+        window.dispatchEvent(new CustomEvent('projects-refreshed', { detail: { projects: d.projects || [] } }))
+      } catch {}
+    }, 10000)
     return () => clearInterval(id)
   }, [loadProjects])
 
@@ -198,7 +209,7 @@ export default function HomePage() {
             <span style={{ color: 'var(--brand)' }}>GenLayer</span>
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.78, maxWidth: 380, marginBottom: 28 }}>
-            GenScout combines AI-powered evaluation, backend security scanning, and community validation to help you discover and trust the best Web3 projects.
+            GenVerse combines AI-powered evaluation, backend security scanning, and community validation to help you discover and trust the best Web3 projects.
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <Link href="/explore" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 20px', background: 'var(--text-1)', color: 'var(--bg)', fontWeight: 700, fontSize: 13, textDecoration: 'none', borderRadius: 10 }}>
@@ -256,10 +267,10 @@ export default function HomePage() {
 
       {/* ── HOW IT WORKS ── */}
       <section style={{ marginBottom: 40 }}>
-        <h2 style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text-1)', marginBottom: 20 }}>How GenScout Works</h2>
+        <h2 style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text-1)', marginBottom: 20 }}>How GenVerse Works</h2>
         <div className="how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
           {[
-            { n: '1', icon: Upload, title: 'Submission',              c: '#22C55E', bg: 'rgba(34,197,94,0.1)',  desc: 'Project owners submit their projects to GenScout.' },
+            { n: '1', icon: Upload, title: 'Submission',              c: '#22C55E', bg: 'rgba(34,197,94,0.1)',  desc: 'Project owners submit their projects to GenVerse.' },
             { n: '2', icon: Shield, title: 'Backend Scanning',        c: '#EAB308', bg: 'rgba(234,179,8,0.1)',  desc: 'Automated scans detect risks, phishing, and vulnerabilities.' },
             { n: '3', icon: Cpu,    title: 'GenLayer AI Evaluation',  c: '#7C3AED', bg: 'rgba(124,58,237,0.1)', desc: 'GenLayer consensus evaluates across multiple dimensions.' },
             { n: '4', icon: Users,  title: 'Community Feedback',      c: '#22C55E', bg: 'rgba(34,197,94,0.1)',  desc: 'Community reviews improve trust over time.' },
@@ -279,9 +290,9 @@ export default function HomePage() {
       {/* ── WHY GENSCOUT + AI SCANNER ── */}
       <section className="why-ai-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 40 }}>
         <div style={{ background: 'var(--bg-secondary)', borderRadius: 16, padding: '28px' }}>
-          <h3 style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text-1)', marginBottom: 10 }}>Why GenScout?</h3>
+          <h3 style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text-1)', marginBottom: 10 }}>Why GenVerse?</h3>
           <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.78, marginBottom: 20 }}>
-            GenScout ensures transparency, security, and community trust so you can discover and support the best Web3 projects with confidence.
+            GenVerse ensures transparency, security, and community trust so you can discover and support the best Web3 projects with confidence.
           </p>
           <Link href="/explore" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: 'var(--brand)', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', borderRadius: 8 }}>
             Explore Projects <ArrowRight size={13} />

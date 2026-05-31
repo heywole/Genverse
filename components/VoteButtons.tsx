@@ -43,7 +43,7 @@ export function VoteButtons({ projectId }: Props) {
         .eq('project_id', projectId)
         .eq('user_id', session.user.id)
         .maybeSingle()
-      setUserVote(v?.vote_type ?? null)
+      setUserVote((v?.vote_type as 'up' | 'down') ?? null)
     } catch (e) {
       console.error('[VoteButtons] fetchVotes error', e)
     }

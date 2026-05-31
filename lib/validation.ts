@@ -12,7 +12,7 @@ export const submitProjectSchema = z.object({
   discord_url:  safeUrl,
   telegram_url: safeUrl,
   docs_url:     safeUrl,
-  category:     z.enum(PROJECT_CATEGORIES as [string, ...string[]]),
+  category:     z.enum(PROJECT_CATEGORIES as unknown as [string, ...string[]]),
   logo_url:     z.string().optional(),
 })
 
