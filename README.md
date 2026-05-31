@@ -1,4 +1,4 @@
-# GenScout
+# GenVerse
 
 The trust and intelligence layer for community-built GenLayer projects.
 
