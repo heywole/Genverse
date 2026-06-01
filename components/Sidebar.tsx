@@ -3,15 +3,19 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Home, Compass, PlusCircle, BookOpen, Users, FolderOpen, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Home, Compass, PlusCircle, BookOpen, Users, FolderOpen, ShieldCheck, ChevronLeft, ChevronRight, UserCircle, Lock } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 
 const NAV = [
-  { href: '/',          label: 'Home',          icon: Home       },
-  { href: '/explore',   label: 'Explore',       icon: Compass    },
-  { href: '/submit',    label: 'Submit',         icon: PlusCircle },
-  { href: '/resources', label: 'Resources',      icon: BookOpen   },
+  { href: '/',          label: 'Home',          icon: Home,        disabled: false },
+  { href: '/explore',   label: 'Explore',       icon: Compass,     disabled: false },
+  { href: '/submit',    label: 'Submit',        icon: PlusCircle,  disabled: false },
+  { href: '/resources', label: 'Resources',     icon: BookOpen,    disabled: false },
+]
+
+const NAV_COMING = [
+  { label: 'Builder Profile', icon: UserCircle },
 ]
 
 interface Props { session: Session | null }
@@ -65,8 +69,13 @@ export function Sidebar({ session: initialSession }: Props) {
         transition: 'width 0.22s ease',
         overflow: 'hidden',
       }}>
-        {/* Collapse toggle */}
-        <div style={{ display: 'flex', justifyContent: collapsed ? 'center' : 'flex-end', padding: '10px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        {/* Collapse toggle with Navigation label */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between', padding: '10px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+          {!collapsed && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
+              Navigation
+            </span>
+          )}
           <button onClick={() => setCollapsed(!collapsed)} style={{
             width: 24, height: 24, borderRadius: '50%',
             border: '1px solid var(--border-hi)', background: 'var(--bg-secondary)',
@@ -98,6 +107,31 @@ export function Sidebar({ session: initialSession }: Props) {
               </Link>
             )
           })}
+          {/* Coming Soon items */}
+          {NAV_COMING.map(({ label, icon: Icon }) => (
+            <div key={label} style={{
+              display: 'flex', alignItems: 'center',
+              gap: 10, padding: collapsed ? '12px 0' : '11px 18px',
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              fontSize: 14, fontWeight: 500,
+              color: 'var(--text-3)',
+              background: 'transparent',
+              borderLeft: '3px solid transparent',
+              whiteSpace: 'nowrap', overflow: 'hidden',
+              cursor: 'not-allowed', opacity: 0.5,
+              userSelect: 'none',
+            }}>
+              <Icon size={16} style={{ flexShrink: 0 }} />
+              {!collapsed && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  {label}
+                  <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: 'var(--bg-tertiary)', color: 'var(--text-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
+                    SOON
+                  </span>
+                </span>
+              )}
+            </div>
+          ))}
         </nav>
 
         {/* Stats */}

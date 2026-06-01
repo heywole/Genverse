@@ -63,15 +63,39 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
 
   async function fetchData() {
     try {
-      const res  = await fetch(`/api/projects?sort=newest&limit=100&t=${Date.now()}`)
-      const data = await res.json()
-      const found = (data.projects || []).find((p: any) => p.id === project.id)
-      if (!found) return false
-      const score = found.ai_score && Number(found.ai_score.score) > 0 ? found.ai_score : null
+      // Fetch directly from Supabase — same source as project detail page
+      const { data: scoreRows } = await supabase
+        .from('ai_scores')
+        .select('score, risk, confidence, positives, risks, findings, breakdown, explanation, tx_hash')
+        .eq('project_id', project.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      const scoreRow = scoreRows?.[0] ?? null
+      const score = scoreRow && Number(scoreRow.score) > 0 ? scoreRow : null
       setLiveScore(score)
-      setLiveViews(found._count?.views ?? 0)
-      setLiveSaves(found._count?.saves ?? 0)
-      setUpvotes(found._votes?.up ?? 0)
+
+      // Fetch view and save counts
+      const { data: ints } = await supabase
+        .from('interactions')
+        .select('type')
+        .eq('project_id', project.id)
+      let views = 0, saves = 0
+      for (const i of ints || []) {
+        if (i.type === 'view') views++
+        if (i.type === 'save') saves++
+      }
+      setLiveViews(views)
+      setLiveSaves(saves)
+
+      // Fetch vote count
+      const { data: votes } = await supabase
+        .from('votes')
+        .select('vote_type')
+        .eq('project_id', project.id)
+      const up = (votes || []).filter((v: any) => v.vote_type === 'up').length
+      setUpvotes(up)
+
       return !!score
     } catch { return false }
   }
@@ -97,16 +121,6 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
       if (!hasScore) startPolling()
     })
 
-    // Vote count
-    async function fetchVotes() {
-      try {
-        const res  = await fetch(`/api/vote?project_id=${project.id}&t=${Date.now()}`)
-        const data = await res.json()
-        if (data.up !== undefined) setUpvotes(data.up)
-      } catch {}
-    }
-    fetchVotes()
-
     // Page-level refresh event from explore/home page
     function handleRefresh(e: any) {
       const found = (e.detail?.projects || []).find((p: any) => p.id === project.id)
@@ -116,13 +130,12 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
       setLiveViews(found._count?.views ?? 0)
       setLiveSaves(found._count?.saves ?? 0)
       setUpvotes(found._votes?.up ?? 0)
-      if (!score) startPolling()  // score gone = re-evaluation started, begin polling
-      else        stopPolling()   // score arrived, stop polling
+      if (!score) { startPolling() } else { stopPolling(); fetchData() }
     }
 
     function handleVoteUpdate(e: any) {
       if (e.detail?.projectId !== project.id) return
-      fetchVotes()
+      fetchData()
     }
 
     window.addEventListener('projects-refreshed', handleRefresh)
