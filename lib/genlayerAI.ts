@@ -66,6 +66,9 @@ export async function evaluateProject(
       has_discord:  !!(project as any).discord_url,
       domain_age_days: null, website_unreachable: true,
       website_html: '', github_summary: '',
+      goplus_flagged: false, safe_browsing_flagged: false, scamsniffer_flagged: false,
+      ssl_valid: true, redirect_chain_length: 0, external_script_count: 0,
+      has_honeypot_patterns: false,
     }
   }
 
