@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-// GET /api/builder-profile?user_id=xxx
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const user_id = searchParams.get('user_id')
@@ -15,28 +14,29 @@ export async function GET(req: NextRequest) {
     { auth: { persistSession: false } }
   )
 
-  const { data: profile } = await supabase
-    .from('builder_profiles').select('*').eq('user_id', user_id).maybeSingle()
-
-  const { data: projects } = await supabase
-    .from('projects')
-    .select('id, name, description, category, logo_url, website_url, github_url, twitter_url, status, created_at')
-    .eq('created_by', user_id).eq('status', 'active')
-    .order('created_at', { ascending: false })
+  // Run profile + projects fetch in parallel
+  const [{ data: profile }, { data: projects }] = await Promise.all([
+    supabase.from('builder_profiles').select('*').eq('user_id', user_id).maybeSingle(),
+    supabase.from('projects')
+      .select('id, name, description, category, logo_url, website_url, github_url, twitter_url, status, created_at')
+      .eq('created_by', user_id).eq('status', 'active')
+      .order('created_at', { ascending: false }),
+  ])
 
   const projectIds = (projects ?? []).map(p => p.id)
 
-  const { data: scores } = projectIds.length
-    ? await supabase.from('ai_scores').select('project_id, score').in('project_id', projectIds)
-    : { data: [] }
-
-  const { data: ints } = projectIds.length
-    ? await supabase.from('interactions').select('project_id, type').in('project_id', projectIds)
-    : { data: [] }
-
-  const { data: msgs } = projectIds.length
-    ? await supabase.from('messages').select('project_id').in('project_id', projectIds)
-    : { data: [] }
+  // Run scores + interactions + messages in parallel
+  const [{ data: scores }, { data: ints }, { data: msgs }] = await Promise.all([
+    projectIds.length
+      ? supabase.from('ai_scores').select('project_id, score').in('project_id', projectIds)
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase.from('interactions').select('project_id, type').in('project_id', projectIds)
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase.from('messages').select('project_id').in('project_id', projectIds)
+      : Promise.resolve({ data: [] }),
+  ])
 
   const scoreMap: Record<string, number> = {}
   for (const s of scores ?? []) scoreMap[s.project_id] = s.score
@@ -66,7 +66,6 @@ export async function GET(req: NextRequest) {
   })
 }
 
-// POST /api/builder-profile — create or update
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -93,7 +92,6 @@ export async function POST(req: NextRequest) {
     discord_url:  discord_url  || null,
     website_url:  website_url  || null,
     other_links:  other_links  || null,
-    // Use the uploaded avatar URL from the request body (not GitHub avatar)
     avatar_url:   avatar_url   || user.user_metadata?.avatar_url || null,
     country:      country      || null,
     updated_at:   new Date().toISOString(),

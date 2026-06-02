@@ -22,11 +22,13 @@ export function ProjectChat({ projectId }: { projectId: string }) {
 
   const fetchMessages = useCallback(async () => {
     try {
-      const res  = await fetch(`/api/messages?project_id=${projectId}&t=${Date.now()}`, {
-        cache: 'no-store'
-      })
-      const data = await res.json()
-      const msgs: Message[] = (data.messages || []).filter(
+      const { data } = await supabase
+        .from('messages')
+        .select('id, user_name, user_avatar, content, created_at')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: true })
+        .limit(100)
+      const msgs: Message[] = (data || []).filter(
         (m: Message) => !m.content.startsWith('⚠️ Downvote feedback:')
       )
       setMessages(msgs)

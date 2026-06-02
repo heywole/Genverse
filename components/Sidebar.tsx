@@ -3,22 +3,124 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Home, Compass, PlusCircle, BookOpen, Users, FolderOpen, ShieldCheck, ChevronLeft, ChevronRight, UserCircle, Lock } from 'lucide-react'
+import { Home, Compass, PlusCircle, BookOpen, Users, FolderOpen, ShieldCheck, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 
 const NAV = [
-  { href: '/',          label: 'Home',          icon: Home,        disabled: false },
-  { href: '/explore',   label: 'Explore',       icon: Compass,     disabled: false },
-  { href: '/submit',    label: 'Submit',        icon: PlusCircle,  disabled: false },
-  { href: '/resources', label: 'Resources',     icon: BookOpen,    disabled: false },
+  { href: '/',          label: 'Home',      icon: Home,       disabled: false },
+  { href: '/explore',   label: 'Explore',   icon: Compass,    disabled: false },
+  { href: '/submit',    label: 'Submit',    icon: PlusCircle, disabled: false },
+  { href: '/resources', label: 'Resources', icon: BookOpen,   disabled: false },
 ]
 
 const NAV_COMING = [
   { label: 'Builder Profile', icon: UserCircle },
 ]
 
+function XIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  )
+}
+
 interface Props { session: Session | null }
+
+
+function BuilderCard({ session }: { session: any }) {
+  const [profile, setProfile] = useState<any>(null)
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    fetch(`/api/builder-profile?user_id=${session.user.id}`)
+      .then(r => r.json())
+      .then(d => setProfile(d.profile))
+      .catch(() => {})
+  }, [session?.user?.id])
+
+  const avatar = profile?.avatar_url || session?.user?.user_metadata?.avatar_url || null
+  const twitterUrl = profile?.twitter_url || null
+  const handle = twitterUrl
+    ? '@' + twitterUrl.replace(/.*x\.com\/|.*twitter\.com\//, '').replace(/\/$/, '')
+    : session?.user?.user_metadata?.full_name || session?.user?.email?.split('@')[0] || 'Builder'
+  const href = twitterUrl || '#'
+
+  return (
+    <a
+      href={href}
+      target={twitterUrl ? '_blank' : '_self'}
+      rel="noopener noreferrer"
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 10px', borderRadius: 10,
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        textDecoration: 'none',
+        transition: 'border-color 0.15s, background 0.15s',
+        cursor: twitterUrl ? 'pointer' : 'default',
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border-hi)'
+        ;(e.currentTarget as HTMLAnchorElement).style.background = 'var(--bg-tertiary)'
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)'
+        ;(e.currentTarget as HTMLAnchorElement).style.background = 'var(--bg-secondary)'
+      }}
+    >
+      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+        {avatar
+          ? <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+          : <span style={{ color: 'var(--text-1)' }}><XIcon /></span>
+        }
+      </div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', lineHeight: 1.2 }}>{handle}</div>
+        <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 1 }}>Built by</div>
+      </div>
+    </a>
+  )
+}
+
+function BuilderAvatarCollapsed({ session }: { session: any }) {
+  const [avatar, setAvatar] = useState<string | null>(null)
+  const [twitterUrl, setTwitterUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    fetch(`/api/builder-profile?user_id=${session.user.id}`)
+      .then(r => r.json())
+      .then(d => {
+        setAvatar(d.profile?.avatar_url || session?.user?.user_metadata?.avatar_url || null)
+        setTwitterUrl(d.profile?.twitter_url || null)
+      })
+      .catch(() => {})
+  }, [session?.user?.id])
+
+  return (
+    <a
+      href={twitterUrl || '#'}
+      target={twitterUrl ? '_blank' : '_self'}
+      rel="noopener noreferrer"
+      title="Built by"
+      style={{
+        width: 32, height: 32, borderRadius: '50%',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--text-2)', textDecoration: 'none',
+        overflow: 'hidden',
+      }}
+    >
+      {avatar
+        ? <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : <XIcon />
+      }
+    </a>
+  )
+}
 
 export function Sidebar({ session: initialSession }: Props) {
   const pathname = usePathname()
@@ -33,18 +135,10 @@ export function Sidebar({ session: initialSession }: Props) {
         supabase.from('projects').select('*', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('ai_scores').select('*', { count: 'exact', head: true }),
       ])
-      // Get user count from profiles table (created on signup) or interactions
-      const { count: userCount } = await supabase
-        .from('interactions')
-        .select('user_id', { count: 'exact', head: false })
-
-      // Count distinct users from interactions as proxy
       const { data: userRows } = await supabase
         .from('interactions')
         .select('user_id')
-
       const distinctUsers = new Set((userRows ?? []).map((r: any) => r.user_id)).size
-
       setStats({
         users:       distinctUsers,
         projects:    p.count ?? 0,
@@ -69,7 +163,7 @@ export function Sidebar({ session: initialSession }: Props) {
         transition: 'width 0.22s ease',
         overflow: 'hidden',
       }}>
-        {/* Collapse toggle with Navigation label */}
+        {/* Collapse toggle */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between', padding: '10px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           {!collapsed && (
             <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
@@ -107,7 +201,6 @@ export function Sidebar({ session: initialSession }: Props) {
               </Link>
             )
           })}
-          {/* Coming Soon items */}
           {NAV_COMING.map(({ label, icon: Icon }) => (
             <div key={label} style={{
               display: 'flex', alignItems: 'center',
@@ -154,6 +247,18 @@ export function Sidebar({ session: initialSession }: Props) {
                 </div>
               </div>
             ))}
+
+            {/* Builder social block */}
+            <div style={{ borderTop: '1px solid var(--border)', marginTop: 4, paddingTop: 14 }}>
+              <BuilderCard session={initialSession} />
+            </div>
+          </div>
+        )}
+
+        {/* Collapsed: show X icon only */}
+        {collapsed && mounted && (
+          <div style={{ borderTop: '1px solid var(--border)', padding: '12px 0', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+            <BuilderAvatarCollapsed session={initialSession} />
           </div>
         )}
       </aside>
