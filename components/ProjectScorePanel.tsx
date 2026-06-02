@@ -48,7 +48,7 @@ export function ProjectScorePanel({ projectId, initialScore }: Props) {
         const fresh = row && Number(row.score) > 0 ? row : null
         if (fresh) {
           // Check it's actually newer than what we already have
-          const isNewer = !score || new Date(fresh.created_at) > new Date(score.created_at)
+          const isNewer = !score || new Date(fresh.created_at as string) > new Date((score as any).created_at as string)
           if (isNewer) {
             setScore(fresh)
             setEvaluating(false)
