@@ -28,7 +28,7 @@ export function ProjectChat({ projectId }: { projectId: string }) {
         .eq('project_id', projectId)
         .order('created_at', { ascending: true })
         .limit(100)
-      const msgs: Message[] = (data || []).filter(
+      const msgs: Message[] = (data || []).map((m: any) => m as Message).filter(
         (m: Message) => !m.content.startsWith('⚠️ Downvote feedback:')
       )
       setMessages(msgs)
