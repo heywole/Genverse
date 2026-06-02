@@ -1,17 +1,4 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-
 export function Footer() {
-  const [avatar, setAvatar] = useState<string | null>(null)
-
-  useEffect(() => {
-    // Fetch heywole's builder profile for the avatar
-    fetch('/api/builder-profile?user_id=59265f3b-db3e-45ae-a340-7267bcc70a4e')
-      .then(r => r.json())
-      .then(d => setAvatar(d.profile?.avatar_url || null))
-      .catch(() => {})
-  }, [])
 
   return (
     <footer style={{
