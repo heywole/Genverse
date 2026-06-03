@@ -27,13 +27,13 @@ export function ProjectPageAutoRefresh({ hasScore, projectId }: { hasScore: bool
     }
 
     // If already marked as evaluating when this page loads
-    if (isEvaluating(projectId)) {
+    if (projectId && isEvaluating(projectId)) {
       startPolling()
     }
 
     // Listen for re-evaluation starting while on this page
     function handleEvalStart(e: any) {
-      if (e.detail?.projectId !== projectId) return
+      if (!projectId || e.detail?.projectId !== projectId) return
       startPolling()
     }
 

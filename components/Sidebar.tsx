@@ -7,6 +7,8 @@ import { Home, Compass, PlusCircle, BookOpen, Users, FolderOpen, ShieldCheck, Ch
 import { supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 
+const ADMIN_EMAILS = ['wolegold247@gmail.com']
+
 const NAV = [
   { href: '/',          label: 'Home',      icon: Home,       disabled: false },
   { href: '/explore',   label: 'Explore',   icon: Compass,    disabled: false },
@@ -25,6 +27,7 @@ function XIcon() {
 }
 
 interface Props { session: Session | null }
+
 
 
 export function Sidebar({ session: initialSession }: Props) {
@@ -107,6 +110,23 @@ export function Sidebar({ session: initialSession }: Props) {
               </Link>
             )
           })}
+          {/* Admin link — only for admin user */}
+          {initialSession?.user?.email && ADMIN_EMAILS.includes(initialSession.user.email) && (
+            <Link href="/admin" style={{
+              display: 'flex', alignItems: 'center',
+              gap: 10, padding: collapsed ? '12px 0' : '11px 18px',
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              fontSize: 14, fontWeight: pathname === '/admin' ? 700 : 500,
+              color: pathname === '/admin' ? 'var(--brand)' : 'var(--text-2)',
+              background: pathname === '/admin' ? 'var(--brand-bg)' : 'transparent',
+              borderLeft: pathname === '/admin' && !collapsed ? '3px solid var(--brand)' : '3px solid transparent',
+              textDecoration: 'none', whiteSpace: 'nowrap', overflow: 'hidden',
+            }}>
+              <ShieldCheck size={16} style={{ flexShrink: 0, color: pathname === '/admin' ? 'var(--brand)' : 'inherit' }} />
+              {!collapsed && 'Admin'}
+            </Link>
+          )}
+
           {/* Builders dropdown */}
           <div>
             <div
