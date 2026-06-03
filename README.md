@@ -1,4 +1,4 @@
-# GenVerse
+# GenRadar
 
 The trust and intelligence layer for community-built GenLayer projects.
 
