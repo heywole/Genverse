@@ -1,16 +1,16 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
-  ArrowLeft, ExternalLink, CheckCircle, XCircle,
-  AlertTriangle, BookOpen, ChevronDown
+  ArrowLeft, ExternalLink, CheckCircle,
+  AlertTriangle, BookOpen
 } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
 import { ProjectChat }              from '@/components/ProjectChat'
-import { VoteButtons }              from '@/components/VoteButtons'
 import { SaveButton }               from '@/components/SaveButton'
 import { ProjectDetailClient }      from '@/components/ProjectDetailClient'
 import { ProjectTabs }              from '@/components/ProjectTabs'
 import { ProjectPageAutoRefresh }   from '@/components/ProjectPageAutoRefresh'
+import { ProjectScorePanel }         from '@/components/ProjectScorePanel'
 
 async function getProject(id: string) {
   const supabase = createClient(
@@ -96,117 +96,14 @@ export default async function ProjectPage({ params }: { params: { id: string } }
 
       {/* RIGHT */}
       <div style={{ position: 'sticky', top: 20 }} className="proj-detail-sidebar">
-        {ai ? (
-          <div style={{ background: 'var(--bg-secondary)', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)' }}>
-
-            {/* Score circle */}
-            <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14, fontFamily: 'var(--font-mono)' }}>AI Trust Score</p>
-              <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 14px' }}>
-                <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
-                  <circle cx="40" cy="40" r={R} fill="none" stroke="var(--bg-tertiary)" strokeWidth="5" />
-                  <circle cx="40" cy="40" r={R} fill="none" stroke={color} strokeWidth="5"
-                    strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
-                </svg>
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontWeight: 900, fontSize: 24, color, letterSpacing: '-0.04em', lineHeight: 1 }}>{ai.score}</span>
-                  <span style={{ fontSize: 9, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>/100</span>
-                </div>
-              </div>
-
-              {rc && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-                  <span style={{ padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700, background: rc.bg, color: rc.c, border: `1px solid ${rc.bd}` }}>
-                    Trust: <strong>{trustLabel(ai.risk)}</strong>
-                  </span>
-                  <span style={{ padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700, background: rc.bg, color: rc.c, border: `1px solid ${rc.bd}` }}>
-                    Risk: <strong>{ai.risk}</strong>
-                  </span>
-                </div>
-              )}
-              <p style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
-                Confidence: {ai.confidence ?? 'Medium'}
-              </p>
-            </div>
-
-            {/* Explorer link */}
-            <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', background: 'rgba(59,130,246,0.06)' }}>
-              <a href={explorerUrl} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--blue)', textDecoration: 'none', fontFamily: 'var(--font-mono)' }}>
-                <ExternalLink size={10} />
-                {txHash
-                  ? `TX: ${txHash.slice(0, 10)}...${txHash.slice(-6)} → GenLayer Explorer`
-                  : 'View on GenLayer Explorer'
-                }
-              </a>
-            </div>
-
-            {/* AI Explanation */}
-            {(ai.explanation || ai.findings?.[0]) && (
-              <details open style={{ borderBottom: '1px solid var(--border)' }}>
-                <summary style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '11px 14px', cursor: 'pointer', listStyle: 'none', fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
-                  AI Explanation <ChevronDown size={11} style={{ marginLeft: 'auto' }} />
-                </summary>
-                <div style={{ padding: '2px 14px 12px' }}>
-                  <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.7 }}>{ai.explanation || ai.findings?.[0]}</p>
-                </div>
-              </details>
-            )}
-
-            {/* Positive signals */}
-            {Array.isArray(ai.positives) && ai.positives.length > 0 && (
-              <details style={{ borderBottom: '1px solid var(--border)' }}>
-                <summary style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '11px 14px', cursor: 'pointer', listStyle: 'none', fontSize: 10, fontWeight: 700, color: 'var(--green)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
-                  <CheckCircle size={10} color="var(--green)" /> Positive Signals <ChevronDown size={11} style={{ marginLeft: 'auto' }} />
-                </summary>
-                <div style={{ padding: '2px 14px 12px' }}>
-                  {ai.positives.map((pos: string, i: number) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, color: 'var(--text-2)', marginBottom: 6, lineHeight: 1.55 }}>
-                      <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--green)', flexShrink: 0, marginTop: 7 }} />
-                      {pos}
-                    </div>
-                  ))}
-                </div>
-              </details>
-            )}
-
-            {/* Risk signals */}
-            {Array.isArray(ai.risks) && ai.risks.length > 0 && (
-              <details style={{ borderBottom: '1px solid var(--border)' }}>
-                <summary style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '11px 14px', cursor: 'pointer', listStyle: 'none', fontSize: 10, fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
-                  <XCircle size={10} color="var(--red)" /> Risk Signals <ChevronDown size={11} style={{ marginLeft: 'auto' }} />
-                </summary>
-                <div style={{ padding: '2px 14px 12px' }}>
-                  {ai.risks.map((r: string, i: number) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, color: 'var(--text-2)', marginBottom: 6, lineHeight: 1.55 }}>
-                      <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--red)', flexShrink: 0, marginTop: 7 }} />
-                      {r}
-                    </div>
-                  ))}
-                </div>
-              </details>
-            )}
-
-            {/* Community Trust */}
-            <div style={{ padding: '14px', background: 'var(--bg-card)', borderTop: '1px solid var(--border)' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, fontFamily: 'var(--font-mono)' }}>Community Trust</p>
-              <VoteButtons projectId={project.id} />
-            </div>
-          </div>
-        ) : (
-          <div style={{ background: 'var(--bg-secondary)', borderRadius: 16, padding: '32px 20px', textAlign: 'center', border: '1px solid var(--border)' }}>
-            <div style={{ width: 32, height: 32, border: '3px solid var(--brand)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
-            <p style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Undergoing AI Evaluation</p>
-            <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>Score will appear shortly...</p>
-          </div>
-        )}
+        <ProjectScorePanel projectId={project.id} initialScore={scoreRow} />
       </div>
     </div>
   )
 
   return (
     <>
-      <ProjectPageAutoRefresh hasScore={hasScore} />
+      <ProjectPageAutoRefresh hasScore={hasScore} projectId={project.id} />
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 20px 80px' }}>
 
         <Link href="/explore" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-3)', textDecoration: 'none', marginBottom: 18, fontFamily: 'var(--font-mono)' }}>
@@ -215,7 +112,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
 
         <div style={{ display: 'flex', gap: 10, padding: '10px 14px', borderRadius: 9, marginBottom: 24, background: 'var(--yellow-bg)', fontSize: 13, color: 'var(--yellow)', lineHeight: 1.5 }}>
           <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-          <span><strong>Community-submitted.</strong> GenVerse does not endorse any project. Always do your own research.</span>
+          <span><strong>Community-submitted.</strong> GenRadar does not endorse any project. Always do your own research.</span>
         </div>
 
         {/* Header */}

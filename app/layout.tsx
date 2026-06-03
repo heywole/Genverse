@@ -8,13 +8,17 @@ import { Footer }         from '@/components/Footer'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'GenVerse',
+  title: 'GenRadar',
   description: 'Community-driven discovery platform for GenLayer ecosystem projects. AI-evaluated. Community-rated.',
-  viewport: 'width=device-width, initial-scale=1',
   icons: {
     icon: '/favicon.svg',
     apple: '/favicon.svg',
   },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -24,16 +28,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
       </head>
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <Navbar session={session} />
           <div style={{ marginTop: 64, display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
-            <div className="sidebar-desktop">
-              <Sidebar session={session} />
-            </div>
+            <Sidebar session={session} />
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
               <main style={{ flex: 1 }}>{children}</main>
               <Footer />

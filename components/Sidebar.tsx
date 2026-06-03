@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Home, Compass, PlusCircle, BookOpen, Users, FolderOpen, ShieldCheck, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react'
+import { Home, Compass, PlusCircle, BookOpen, Users, FolderOpen, ShieldCheck, ChevronLeft, ChevronRight, UserCircle, ChevronDown, Trophy } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 
@@ -14,9 +14,7 @@ const NAV = [
   { href: '/resources', label: 'Resources', icon: BookOpen,   disabled: false },
 ]
 
-const NAV_COMING = [
-  { label: 'Builder Profile', icon: UserCircle },
-]
+const IS_PROD = process.env.NODE_ENV === 'production'
 
 function XIcon() {
   return (
@@ -34,6 +32,7 @@ export function Sidebar({ session: initialSession }: Props) {
   const [mounted,   setMounted]   = useState(false)
   const [stats,     setStats]     = useState({ users: 0, projects: 0, evaluations: 0 })
   const [collapsed, setCollapsed] = useState(false)
+  const [buildersOpen, setBuildersOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -108,30 +107,51 @@ export function Sidebar({ session: initialSession }: Props) {
               </Link>
             )
           })}
-          {NAV_COMING.map(({ label, icon: Icon }) => (
-            <div key={label} style={{
-              display: 'flex', alignItems: 'center',
-              gap: 10, padding: collapsed ? '12px 0' : '11px 18px',
-              justifyContent: collapsed ? 'center' : 'flex-start',
-              fontSize: 14, fontWeight: 500,
-              color: 'var(--text-3)',
-              background: 'transparent',
-              borderLeft: '3px solid transparent',
-              whiteSpace: 'nowrap', overflow: 'hidden',
-              cursor: 'not-allowed', opacity: 0.5,
-              userSelect: 'none',
-            }}>
-              <Icon size={16} style={{ flexShrink: 0 }} />
+          {/* Builders dropdown */}
+          <div>
+            <div
+              onClick={() => !collapsed && setBuildersOpen(o => !o)}
+              style={{
+                display: 'flex', alignItems: 'center',
+                gap: 10, padding: collapsed ? '12px 0' : '11px 18px',
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                fontSize: 14, fontWeight: pathname.startsWith('/builders') ? 700 : 500,
+                color: pathname.startsWith('/builders') ? 'var(--brand)' : 'var(--text-2)',
+                background: pathname.startsWith('/builders') ? 'var(--brand-bg)' : 'transparent',
+                borderLeft: pathname.startsWith('/builders') && !collapsed ? '3px solid var(--brand)' : '3px solid transparent',
+                cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden',
+                userSelect: 'none',
+              }}
+            >
+              <Users size={16} style={{ flexShrink: 0, color: pathname.startsWith('/builders') ? 'var(--brand)' : 'inherit' }} />
               {!collapsed && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  {label}
-                  <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: 'var(--bg-tertiary)', color: 'var(--text-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
-                    SOON
-                  </span>
-                </span>
+                <>
+                  <span style={{ flex: 1 }}>Builders</span>
+                  <ChevronDown size={12} style={{ transform: buildersOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', marginRight: 4 }} />
+                </>
               )}
             </div>
-          ))}
+            {!collapsed && buildersOpen && (
+              <div style={{ paddingLeft: 32 }}>
+                <Link href="/builders" style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 18px 8px 0', fontSize: 13,
+                  color: pathname === '/builders' ? 'var(--brand)' : 'var(--text-3)',
+                  fontWeight: pathname === '/builders' ? 600 : 400,
+                  textDecoration: 'none',
+                }}>All Builders</Link>
+                <Link href="/builders/leaderboard" style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 18px 8px 0', fontSize: 13,
+                  color: pathname === '/builders/leaderboard' ? 'var(--brand)' : 'var(--text-3)',
+                  fontWeight: pathname === '/builders/leaderboard' ? 600 : 400,
+                  textDecoration: 'none',
+                }}>
+                  <Trophy size={11} /> Leaderboard
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Stats */}
