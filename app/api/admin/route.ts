@@ -3,13 +3,13 @@ import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-// Your user ID — only you can access admin
 const ADMIN_EMAILS = ['wolegold247@gmail.com']
 
 async function verifyAdmin(req: NextRequest) {
   const auth = req.headers.get('Authorization')
   if (!auth) return null
   const token = auth.replace('Bearer ', '')
+  // Use anon key with user token to verify identity
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -20,29 +20,34 @@ async function verifyAdmin(req: NextRequest) {
   return user
 }
 
+function getServiceClient() {
+  // Use service role key for admin data access — bypasses RLS
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    key,
+    { auth: { persistSession: false } }
+  )
+}
+
 export async function GET(req: NextRequest) {
   const user = await verifyAdmin(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  )
+  const supabase = getServiceClient()
 
   const [
     { data: projects },
     { data: scores },
-    { data: users },
+    { data: profiles },
     { data: messages },
   ] = await Promise.all([
     supabase.from('projects').select('*').order('created_at', { ascending: false }),
     supabase.from('ai_scores').select('*').order('created_at', { ascending: false }),
-    supabase.from('builder_profiles').select('*'),
-    supabase.from('messages').select('project_id').limit(1000),
+    supabase.from('builder_profiles').select('user_id'),
+    supabase.from('messages').select('id').limit(1000),
   ])
 
-  // Map latest score per project
   const scoreMap: Record<string, any> = {}
   for (const s of scores ?? []) {
     if (!scoreMap[s.project_id]) scoreMap[s.project_id] = s
@@ -53,8 +58,9 @@ export async function GET(req: NextRequest) {
     ai_score: scoreMap[p.id] ?? null,
   }))
 
-  const stuck = projectsWithScores.filter(p => !p.ai_score && p.status === 'active')
-  const evaluated = projectsWithScores.filter(p => p.ai_score)
+  const active = projectsWithScores.filter(p => p.status === 'active')
+  const evaluated = active.filter(p => p.ai_score)
+  const stuck = active.filter(p => !p.ai_score)
   const avgScore = evaluated.length
     ? Math.round(evaluated.reduce((a, p) => a + Number(p.ai_score.score), 0) / evaluated.length)
     : null
@@ -62,10 +68,10 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     projects: projectsWithScores,
     stats: {
-      totalProjects: projects?.length ?? 0,
+      totalProjects: active.length,
       totalEvaluated: evaluated.length,
       totalStuck: stuck.length,
-      totalUsers: users?.length ?? 0,
+      totalUsers: profiles?.length ?? 0,
       totalMessages: messages?.length ?? 0,
       avgScore,
     },
@@ -78,18 +84,15 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { action, project_id } = await req.json()
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  )
+  const supabase = getServiceClient()
 
   if (action === 'delete') {
-    await supabase.from('ai_scores').delete().eq('project_id', project_id)
-    await supabase.from('messages').delete().eq('project_id', project_id)
-    await supabase.from('interactions').delete().eq('project_id', project_id)
-    await supabase.from('votes').delete().eq('project_id', project_id)
+    await Promise.all([
+      supabase.from('ai_scores').delete().eq('project_id', project_id),
+      supabase.from('messages').delete().eq('project_id', project_id),
+      supabase.from('interactions').delete().eq('project_id', project_id),
+      supabase.from('votes').delete().eq('project_id', project_id),
+    ])
     const { error } = await supabase.from('projects').delete().eq('id', project_id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })
@@ -108,15 +111,18 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 're-evaluate') {
-    // Trigger re-evaluation via the existing route
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const res = await fetch(`${baseUrl}/api/re-evaluate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ project_id }),
-    })
-    const data = await res.json()
-    return NextResponse.json(data)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://genradar.vercel.app'
+    try {
+      const res = await fetch(`${baseUrl}/api/re-evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id }),
+      })
+      const data = await res.json()
+      return NextResponse.json(data)
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message }, { status: 500 })
+    }
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })

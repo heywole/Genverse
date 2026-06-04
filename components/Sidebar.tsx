@@ -44,17 +44,26 @@ export function Sidebar({ session: initialSession }: Props) {
         supabase.from('projects').select('*', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('ai_scores').select('*', { count: 'exact', head: true }),
       ])
-      const { data: userRows } = await supabase
-        .from('interactions')
-        .select('user_id')
-      const distinctUsers = new Set((userRows ?? []).map((r: any) => r.user_id)).size
+      // Count distinct users from interactions + votes + messages combined
+      const [{ data: intUsers }, { data: voteUsers }, { data: msgUsers }] = await Promise.all([
+        supabase.from('interactions').select('user_id'),
+        supabase.from('votes').select('user_id'),
+        supabase.from('messages').select('user_id'),
+      ])
+      const allUserIds = new Set([
+        ...(intUsers ?? []).map((r: any) => r.user_id),
+        ...(voteUsers ?? []).map((r: any) => r.user_id),
+        ...(msgUsers ?? []).map((r: any) => r.user_id),
+      ])
       setStats({
-        users:       distinctUsers,
+        users:       allUserIds.size,
         projects:    p.count ?? 0,
         evaluations: a.count ?? 0,
       })
     }
     loadStats()
+    const id = setInterval(loadStats, 30000)
+    return () => clearInterval(id)
   }, [])
 
   const width = collapsed ? 64 : 200

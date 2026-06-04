@@ -7,6 +7,7 @@ import { ProjectCard } from '@/components/ProjectCard'
 import { Loader2, User, Bookmark, Eye, Flag, Package, X, Check, Clock, Pencil, Upload, Camera, LayoutGrid, List } from 'lucide-react'
 import type { Project } from '@/types'
 import { PROJECT_CATEGORIES } from '@/types'
+import { markEvaluating } from '@/lib/evaluatingState'
 
 type Tab = 'submitted' | 'saved' | 'viewed' | 'reported'
 type CardView = 'grid' | 'list'
@@ -188,6 +189,11 @@ export default function ProfilePage() {
       ...editForm, github_url: editForm.github_url || null, twitter_url: editForm.twitter_url || null,
       discord_url: editForm.discord_url || null, docs_url: editForm.docs_url || null, evaluation_status: 'pending',
     }).eq('id', editProject.id).eq('created_by', user.id)
+    markEvaluating(editProject.id)
+    // Clear cached score so card shows AI Evaluating immediately
+    try { sessionStorage.removeItem('score_' + editProject.id) } catch {}
+    // Tell all cards this project was updated
+    window.dispatchEvent(new CustomEvent('evaluation-started', { detail: { projectId: editProject.id } }))
     fetch('/api/re-evaluate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: editProject.id }) }).catch(() => {})
     setSaving(false); setEditProject(null); fetchProjects('submitted')
   }

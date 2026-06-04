@@ -109,14 +109,23 @@ body { font-family: var(--font-sans); background: var(--bg); color: var(--text-1
 @keyframes fadeUp  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 
 /* ── Mobile responsive ── */
-.mobile-only { display: none; }
+/* Desktop-only elements */
+.mobile-menu-btn    { display: none !important; }
+.mobile-drawer      { display: none !important; }
+.mobile-drawer-overlay { display: none !important; }
 
 @media (max-width: 768px) {
-  /* Layout */
-  .sidebar-desktop { display: none !important; }
-  .main-content    { margin-left: 0 !important; }
-  .mobile-only     { display: flex !important; }
-  .hide-mobile     { display: none !important; }
+  /* Show mobile elements */
+  .mobile-menu-btn    { display: flex !important; }
+  .mobile-drawer      { display: flex !important; }
+  .mobile-drawer-overlay { display: block !important; }
+
+  /* Hide desktop sidebar */
+  .sidebar-desktop    { display: none !important; }
+  .main-content       { margin-left: 0 !important; }
+
+  /* Hide text labels on small screens */
+  .hide-on-mobile     { display: none !important; }
 
   /* Homepage hero */
   .hero-grid       { grid-template-columns: 1fr !important; }
