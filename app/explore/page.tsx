@@ -43,11 +43,16 @@ export default function ExplorePage() {
     setLoading(false)
   }, [])
 
-  // Initial load + 20s live refresh
+  // Track current filters in refs so interval always uses latest values
+  const filtersRef = useRef({ search: '', category: 'All', risk: 'All', sort: 'score' })
+  useEffect(() => { filtersRef.current = { search, category, risk, sort } }, [search, category, risk, sort])
+
+  // Initial load + 20s live refresh using current filters
   useEffect(() => {
     load('', 'All', 'All', 'score')
     const id = setInterval(async () => {
-      load(search, category, risk, sort, true)
+      const { search: s, category: c, risk: r, sort: srt } = filtersRef.current
+      load(s, c, r, srt, true)
       try {
         const res = await fetch('/api/projects?sort=newest&limit=100&t=' + Date.now())
         const d = await res.json()

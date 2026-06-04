@@ -9,23 +9,21 @@ async function verifyAdmin(req: NextRequest) {
   const auth = req.headers.get('Authorization')
   if (!auth) return null
   const token = auth.replace('Bearer ', '')
-  // Use anon key with user token to verify identity
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } }
   )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || !ADMIN_EMAILS.includes(user.email ?? '')) return null
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) return null
+  if (!ADMIN_EMAILS.includes(user.email ?? '')) return null
   return user
 }
 
-function getServiceClient() {
-  // Use service role key for admin data access — bypasses RLS
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+function serviceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    key,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { persistSession: false } }
   )
 }
@@ -34,19 +32,21 @@ export async function GET(req: NextRequest) {
   const user = await verifyAdmin(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const supabase = getServiceClient()
+  const supabase = serviceClient()
 
   const [
-    { data: projects },
+    { data: projects, error: pErr },
     { data: scores },
-    { data: profiles },
-    { data: messages },
+    { data: usersData },
+    { count: msgCount },
   ] = await Promise.all([
     supabase.from('projects').select('*').order('created_at', { ascending: false }),
     supabase.from('ai_scores').select('*').order('created_at', { ascending: false }),
-    supabase.from('builder_profiles').select('user_id'),
-    supabase.from('messages').select('id').limit(1000),
+    supabase.auth.admin.listUsers({ perPage: 1000 }),
+    supabase.from('messages').select('*', { count: 'exact', head: true }),
   ])
+
+  if (pErr) console.error('[admin] projects error:', pErr.message)
 
   const scoreMap: Record<string, any> = {}
   for (const s of scores ?? []) {
@@ -58,21 +58,21 @@ export async function GET(req: NextRequest) {
     ai_score: scoreMap[p.id] ?? null,
   }))
 
-  const active = projectsWithScores.filter(p => p.status === 'active')
-  const evaluated = active.filter(p => p.ai_score)
-  const stuck = active.filter(p => !p.ai_score)
-  const avgScore = evaluated.length
-    ? Math.round(evaluated.reduce((a, p) => a + Number(p.ai_score.score), 0) / evaluated.length)
-    : null
+  const active      = projectsWithScores.filter(p => p.status === 'active')
+  const evaluated   = active.filter(p => p.ai_score)
+  const stuck       = active.filter(p => !p.ai_score)
+  const allScores   = evaluated.map(p => Number(p.ai_score.score)).filter(Boolean)
+  const avgScore    = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : null
+  const totalUsers  = usersData?.users?.length ?? 0
 
   return NextResponse.json({
     projects: projectsWithScores,
     stats: {
-      totalProjects: active.length,
+      totalProjects:  active.length,
       totalEvaluated: evaluated.length,
-      totalStuck: stuck.length,
-      totalUsers: profiles?.length ?? 0,
-      totalMessages: messages?.length ?? 0,
+      totalStuck:     stuck.length,
+      totalUsers,
+      totalMessages:  msgCount ?? 0,
       avgScore,
     },
     recentScores: (scores ?? []).slice(0, 20),
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { action, project_id } = await req.json()
-  const supabase = getServiceClient()
+  const supabase = serviceClient()
 
   if (action === 'delete') {
     await Promise.all([
@@ -99,27 +99,25 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'approve') {
-    const { error } = await supabase.from('projects').update({ status: 'active' }).eq('id', project_id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    await supabase.from('projects').update({ status: 'active' }).eq('id', project_id)
     return NextResponse.json({ success: true })
   }
 
   if (action === 'reject') {
-    const { error } = await supabase.from('projects').update({ status: 'rejected' }).eq('id', project_id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    await supabase.from('projects').update({ status: 'rejected' }).eq('id', project_id)
     return NextResponse.json({ success: true })
   }
 
   if (action === 're-evaluate') {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://genradar.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://genradar.vercel.app'
     try {
       const res = await fetch(`${baseUrl}/api/re-evaluate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_id }),
       })
-      const data = await res.json()
-      return NextResponse.json(data)
+      const d = await res.json()
+      return NextResponse.json(d)
     } catch (e: any) {
       return NextResponse.json({ error: e.message }, { status: 500 })
     }

@@ -7,45 +7,29 @@ export async function GET() {
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false } }
     )
 
     const [
       { count: projects },
       { count: evaluations },
-      { count: interactions },
-      { count: votes },
-      { count: messages },
+      { data: usersData, error: usersError },
     ] = await Promise.all([
       supabase.from('projects').select('*', { count: 'exact', head: true }).eq('status', 'active'),
       supabase.from('ai_scores').select('*', { count: 'exact', head: true }),
-      supabase.from('interactions').select('user_id', { count: 'exact', head: true }),
-      supabase.from('votes').select('user_id', { count: 'exact', head: true }),
-      supabase.from('messages').select('user_id', { count: 'exact', head: true }),
+      supabase.auth.admin.listUsers({ perPage: 1000, page: 1 }),
     ])
 
-    // Try service role for exact auth.users count
-    let users = 0
-    try {
-      const admin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { persistSession: false } }
-      )
-      const { data } = await admin.auth.admin.listUsers({ perPage: 1000 })
-      users = data?.users?.length ?? 0
-    } catch {
-      // Fallback: estimate from distinct activity
-      users = Math.max(interactions ?? 0, votes ?? 0, messages ?? 0, 1)
-    }
+    const users = usersError ? 0 : (usersData?.users?.length ?? 0)
 
     return NextResponse.json({
       users,
       projects: projects ?? 0,
       evaluations: evaluations ?? 0,
     })
-  } catch (e: any) {
+  } catch (e) {
+    console.error('[stats]', e)
     return NextResponse.json({ users: 0, projects: 0, evaluations: 0 })
   }
 }
