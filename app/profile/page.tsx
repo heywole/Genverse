@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { CountrySelector } from '@/components/CountrySelector'
 import { ProjectCard } from '@/components/ProjectCard'
 import { Loader2, User, Bookmark, Eye, Flag, Package, X, Check, Clock, Pencil, Upload, Camera, LayoutGrid, List } from 'lucide-react'
 import type { Project } from '@/types'
@@ -33,6 +34,8 @@ export default function ProfilePage() {
   const [builderProfile,  setBuilderProfile]  = useState<any>(null)
   const [showBuilderForm, setShowBuilderForm] = useState(false)
   const [builderForm,     setBuilderForm]     = useState({ bio: '', twitter_url: '', telegram_url: '', github_url: '', discord_url: '', website_url: '', other_links: '', avatar_url: '', country: '' })
+  const [countrySearch,   setCountrySearch]   = useState('')
+  const [countryOpen,     setCountryOpen]     = useState(false)
   const [savingBuilder,   setSavingBuilder]   = useState(false)
   const [builderSaved,    setBuilderSaved]    = useState(false)
   const [avatarFile,      setAvatarFile]      = useState<File | null>(null)
@@ -312,12 +315,7 @@ export default function ProfilePage() {
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 6, display: 'block' }}>Country</label>
-              <select value={builderForm.country} onChange={e => setBuilderForm(f => ({ ...f, country: e.target.value }))} style={{ ...inp, cursor: 'pointer' }}>
-                <option value="">Select country...</option>
-                {[['NG','Nigeria'],['US','United States'],['GB','United Kingdom'],['GH','Ghana'],['KE','Kenya'],['ZA','South Africa'],['IN','India'],['DE','Germany'],['FR','France'],['CA','Canada'],['AU','Australia'],['BR','Brazil'],['JP','Japan'],['CN','China'],['SN','Senegal'],['ET','Ethiopia'],['EG','Egypt'],['MA','Morocco'],['TN','Tunisia'],['Other','Other']].map(([code, name]) => (
-                  <option key={code} value={code}>{name}</option>
-                ))}
-              </select>
+              <CountrySelector value={builderForm.country} onChange={v => setBuilderForm(f => ({ ...f, country: v }))} />
             </div>
             {(['twitter_url','github_url','telegram_url','discord_url','website_url','other_links'] as const).map(key => (
               <div key={key}>

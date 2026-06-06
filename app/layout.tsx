@@ -36,7 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div style={{ marginTop: 64, display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
             <Sidebar session={session} />
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
-              <main style={{ flex: 1 }}>{children}</main>
+              <main style={{ flex: 1, minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>{children}</main>
               <Footer />
             </div>
           </div>

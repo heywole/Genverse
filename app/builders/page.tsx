@@ -4,15 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { User } from 'lucide-react'
 
-const COUNTRY_FLAGS: Record<string, string> = {
-  AF:'🇦🇫',AL:'🇦🇱',DZ:'🇩🇿',AR:'🇦🇷',AU:'🇦🇺',AT:'🇦🇹',BD:'🇧🇩',BE:'🇧🇪',BR:'🇧🇷',CA:'🇨🇦',
-  CL:'🇨🇱',CN:'🇨🇳',CO:'🇨🇴',HR:'🇭🇷',CZ:'🇨🇿',DK:'🇩🇰',EG:'🇪🇬',ET:'🇪🇹',FI:'🇫🇮',FR:'🇫🇷',
-  DE:'🇩🇪',GH:'🇬🇭',GR:'🇬🇷',GT:'🇬🇹',HU:'🇭🇺',IN:'🇮🇳',ID:'🇮🇩',IE:'🇮🇪',IL:'🇮🇱',IT:'🇮🇹',
-  JP:'🇯🇵',KE:'🇰🇪',KR:'🇰🇷',MY:'🇲🇾',MX:'🇲🇽',MA:'🇲🇦',NL:'🇳🇱',NZ:'🇳🇿',NG:'🇳🇬',NO:'🇳🇴',
-  PK:'🇵🇰',PE:'🇵🇪',PH:'🇵🇭',PL:'🇵🇱',PT:'🇵🇹',RO:'🇷🇴',RU:'🇷🇺',SA:'🇸🇦',SN:'🇸🇳',ZA:'🇿🇦',
-  ES:'🇪🇸',SE:'🇸🇪',CH:'🇨🇭',TW:'🇹🇼',TH:'🇹🇭',TN:'🇹🇳',TR:'🇹🇷',UA:'🇺🇦',GB:'🇬🇧',US:'🇺🇸',
-  VN:'🇻🇳',ZW:'🇿🇼',
-}
+import { COUNTRY_FLAG } from '@/components/CountrySelector'
+const COUNTRY_FLAGS = COUNTRY_FLAG
 
 function badgeStyle(badge: string) {
   if (badge === 'Trusted Builder')     return { bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' }

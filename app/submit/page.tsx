@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Upload, ArrowRight, CheckCircle, AlertCircle, Loader2, Link2, Github, FileText, Tag, Twitter, MessageCircle, LogIn, BookOpen, Send } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { PROJECT_CATEGORIES } from '@/types'
+
+const BASE_CATEGORIES = PROJECT_CATEGORIES
 import type { Session } from '@supabase/supabase-js'
 
 const inp = (err?: boolean): React.CSSProperties => ({
@@ -37,6 +39,16 @@ export default function SubmitPage() {
     name: '', description: '', website_url: '', github_url: '',
     twitter_url: '', discord_url: '', telegram_url: '', docs_url: '', category: '',
   })
+
+  const [categories,     setCategories]     = useState<string[]>([...PROJECT_CATEGORIES])
+  const [customCategory, setCustomCategory] = useState('')
+
+  useEffect(() => {
+    // Load dynamic categories from DB
+    fetch('/api/categories').then(r => r.json()).then(d => {
+      if (d.categories) setCategories(d.categories)
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => { setSession(s); setAuthLoading(false) })
@@ -223,10 +235,37 @@ export default function SubmitPage() {
         {/* Category */}
         <div>
           {label('Category', true)}
-          <select value={form.category} onChange={e => set('category', e.target.value)} style={{ ...inp(!!errors.category), cursor: 'pointer' }}>
+          <select value={form.category} onChange={e => {
+            set('category', e.target.value)
+            if (e.target.value !== 'Other') setCustomCategory('')
+          }} style={{ ...inp(!!errors.category), cursor: 'pointer' }}>
             <option value="">Select a category...</option>
-            {PROJECT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
+          {form.category === 'Other' && (
+            <div style={{ marginTop: 8 }}>
+              <input
+                type="text"
+                placeholder="Enter custom category (e.g. AI Governance)"
+                value={customCategory}
+                onChange={e => setCustomCategory(e.target.value)}
+                onBlur={async () => {
+                  const name = customCategory.trim()
+                  if (!name || name.length < 2) return
+                  // Save to DB and add to list
+                  await fetch('/api/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+                  setCategories(prev => {
+                    const withoutOther = prev.filter(c => c !== 'Other')
+                    if (withoutOther.includes(name)) return prev
+                    return [...withoutOther, name, 'Other']
+                  })
+                  set('category', name)
+                }}
+                style={{ ...inp(), fontSize: 13 }}
+              />
+              <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>Press Tab or click away to save your custom category</p>
+            </div>
+          )}
           {errors.category && <p style={{ fontSize: 12, color: 'var(--red)', marginTop: 4 }}>{errors.category}</p>}
         </div>
 

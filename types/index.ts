@@ -56,7 +56,7 @@ export const PROJECT_CATEGORIES = [
   'Infra', 'AI', 'DeFi', 'Lending', 'Derivatives', 'Stable',
   'Payments', 'Wallet', 'Identity', 'Custody', 'Bridge',
   'DevTools', 'Analytics', 'Oracle', 'DAO', 'LaunchPad',
-  'RWA', 'Game', 'NFT', 'Social', 'Other'
+  'RWA', 'Game', 'NFT', 'Social', 'Prediction Market', 'Other'
 ] as const
 
 export type ProjectCategory = typeof PROJECT_CATEGORIES[number]

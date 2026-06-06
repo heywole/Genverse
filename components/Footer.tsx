@@ -13,6 +13,17 @@ export function Footer() {
         © {new Date().getFullYear()} GenRadar. All rights reserved.
       </p>
 
+      {/* Powered by GenLayer */}
+      <a
+        href="https://genlayer.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
+      >
+        <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Powered by</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand)' }}>GenLayer</span>
+      </a>
+
       {/* GitHub */}
       <a href="https://github.com/heywole/genradar" target="_blank" rel="noopener noreferrer"
         style={{ display: 'flex', alignItems: 'center', color: 'var(--text-3)', textDecoration: 'none' }}
@@ -24,23 +35,14 @@ export function Footer() {
 
       {/* Built by @heywole */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{
-          width: 26, height: 26, borderRadius: '50%',
-          overflow: 'hidden', flexShrink: 0,
-          border: '1px solid var(--border)',
-        }}>
+        <div style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border)' }}>
           <img src="/avatar.jpg" alt="heywole" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <span style={{ fontSize: 13, color: 'var(--text-3)' }}>
           Built by <strong style={{ color: 'var(--text-2)' }}>@heywole</strong>
         </span>
         <a href="https://x.com/heywole" target="_blank" rel="noopener noreferrer"
-          style={{
-            display: 'inline-flex', alignItems: 'center',
-            padding: '4px 12px', borderRadius: 999,
-            background: 'var(--text-1)', color: 'var(--bg)',
-            fontSize: 12, fontWeight: 700, textDecoration: 'none',
-          }}>
+          style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 12px', borderRadius: 999, background: 'var(--text-1)', color: 'var(--bg)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
           FOLLOW
         </a>
       </div>
