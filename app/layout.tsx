@@ -33,10 +33,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <Navbar session={session} />
-          <div style={{ marginTop: 64, display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
+          <div style={{ marginTop: 64, display: 'flex', minHeight: 'calc(100vh - 64px)', overflow: 'hidden', maxWidth: '100vw' }}>
             <Sidebar session={session} />
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
-              <main style={{ flex: 1, minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>{children}</main>
+            <div style={{ flex: 1, minWidth: 0, width: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden' }}>
+              <main style={{ flex: 1, minWidth: 0, overflowX: 'hidden' }}>{children}</main>
               <Footer />
             </div>
           </div>

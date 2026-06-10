@@ -15,7 +15,8 @@ export function Navbar({ session: initialSession }: Props) {
   const [mounted,     setMounted]     = useState(false)
   const [session,     setSession]     = useState<Session | null>(initialSession)
   const [dropOpen,    setDropOpen]    = useState(false)
-  const [mobileOpen,  setMobileOpen]  = useState(false)
+  const [mobileOpen,    setMobileOpen]    = useState(false)
+  const [buildersMobileOpen, setBuildersMobileOpen] = useState(false)
   const [avatarError, setAvatarError] = useState(false)
   const dropRef  = useRef<HTMLDivElement>(null)
   const router   = useRouter()
@@ -206,7 +207,6 @@ export function Navbar({ session: initialSession }: Props) {
             { href: '/explore', label: 'Explore' },
             { href: '/submit', label: 'Submit' },
             { href: '/resources', label: 'Resources' },
-            { href: '/builders', label: 'Builders' },
           ].map(({ href, label }) => {
             const active = pathname === href || (href !== '/' && pathname.startsWith(href))
             return (
@@ -222,6 +222,33 @@ export function Navbar({ session: initialSession }: Props) {
               </Link>
             )
           })}
+
+          {/* Builders dropdown in mobile */}
+          <div>
+            <button onClick={() => setBuildersMobileOpen(o => !o)} style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 16px', borderRadius: 10, marginBottom: 4,
+              fontSize: 15, fontWeight: pathname.startsWith('/builders') ? 700 : 500,
+              color: pathname.startsWith('/builders') ? 'var(--brand)' : 'var(--text-2)',
+              background: pathname.startsWith('/builders') ? 'var(--brand-bg)' : 'transparent',
+              border: 'none', cursor: 'pointer', textAlign: 'left',
+            }}>
+              Builders
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: buildersMobileOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            {buildersMobileOpen && (
+              <div style={{ paddingLeft: 28, marginBottom: 4 }}>
+                <Link href="/builders" style={{ display: 'block', padding: '10px 16px', borderRadius: 8, fontSize: 14, color: pathname === '/builders' ? 'var(--brand)' : 'var(--text-3)', textDecoration: 'none', fontWeight: pathname === '/builders' ? 600 : 400 }}>
+                  All Builders
+                </Link>
+                <Link href="/builders/leaderboard" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 8, fontSize: 14, color: pathname === '/builders/leaderboard' ? 'var(--brand)' : 'var(--text-3)', textDecoration: 'none', fontWeight: pathname === '/builders/leaderboard' ? 600 : 400 }}>
+                  🏆 Leaderboard
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
         {session && (
           <div style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>

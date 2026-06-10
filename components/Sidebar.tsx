@@ -196,7 +196,6 @@ export function Sidebar({ session: initialSession }: Props) {
         {/* Collapsed: show X icon only */}
 
       </aside>
-      <div style={{ width, minWidth: width, flexShrink: 0, transition: 'width 0.22s ease' }} />
     </>
   )
 }
