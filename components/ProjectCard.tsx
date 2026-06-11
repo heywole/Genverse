@@ -46,7 +46,10 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
   const router   = useRouter()
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const [liveScore, setLiveScore] = useState<any>(null)
+  const [liveScore, setLiveScore] = useState<any>(() => {
+    const s = project.ai_score
+    return (s && Number(s.score) > 0) ? s : null
+  })
   const [liveViews, setLiveViews] = useState<number>(project._count?.views ?? 0)
   const [liveSaves, setLiveSaves] = useState<number>(project._count?.saves ?? 0)
   const [upvotes,   setUpvotes]   = useState<number>((project as any)._votes?.up ?? 0)

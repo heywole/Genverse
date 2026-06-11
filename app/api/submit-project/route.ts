@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { submitProjectSchema } from '@/lib/validation'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
-import { checkRateLimit } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
   const token = req.headers.get('Authorization')?.replace('Bearer ', '')
@@ -37,19 +37,19 @@ export async function POST(req: NextRequest) {
   const { data: project, error: insertErr } = await supabase
     .from('projects')
     .insert({
-      name:         p.name,
-      description:  p.description,
-      website_url:  p.website_url,
-      github_url:   p.github_url   || null,
-      twitter_url:  p.twitter_url  || null,
-      discord_url:  p.discord_url  || null,
-      telegram_url: (p as any).telegram_url || null,
-      docs_url:     p.docs_url     || null,
-      category:     p.category,
-      logo_url:     p.logo_url     || null,
-      created_by:   user.id,
-      status:       'active',
-      evaluation_status:   'pending',
+      name:              p.name,
+      description:       p.description,
+      website_url:       p.website_url,
+      github_url:        p.github_url        || null,
+      twitter_url:       p.twitter_url       || null,
+      discord_url:       p.discord_url       || null,
+      telegram_url:      (p as any).telegram_url || null,
+      docs_url:          p.docs_url          || null,
+      category:          p.category,
+      logo_url:          p.logo_url          || null,
+      created_by:        user.id,
+      status:            'active',
+      evaluation_status: 'pending',
       evaluation_attempts: 0,
     })
     .select().single()
@@ -59,24 +59,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to save project. Please try again.' }, { status: 500 })
   }
 
-  runEvaluation(project, p, supabase).catch(e =>
-    console.error('[submit] background eval error:', e.message)
-  )
-
-  return NextResponse.json({
-    success: true,
-    project,
-    message: 'Project submitted! AI evaluation is running in the background.',
-    remaining_submissions: remaining,
-  }, { status: 201 })
-}
-
-async function runEvaluation(project: any, payload: any, supabase: any) {
+  // Run evaluation synchronously — keeps the connection alive for the full maxDuration
   try {
     await supabase.from('projects').update({ evaluation_status: 'processing' }).eq('id', project.id)
 
     const { evaluateProject } = await import('@/lib/genlayerAI')
-    const aiScore = await evaluateProject(payload, project.id)
+    const aiScore = await evaluateProject(p, project.id)
 
     // Clean AI narrative — remove inaccurate social claims
     const cleanedRisks = (aiScore.risks || []).filter((r: string) => {
@@ -89,10 +77,10 @@ async function runEvaluation(project: any, payload: any, supabase: any) {
       return true
     })
     const cleanedPositives = [...(aiScore.positives || [])]
-    if (project.twitter_url  && !cleanedPositives.some((p: string) => p.toLowerCase().includes('twitter')))  cleanedPositives.push('Twitter/X account is linked')
-    if (project.github_url   && !cleanedPositives.some((p: string) => p.toLowerCase().includes('github')))   cleanedPositives.push('Public GitHub repository is linked')
-    if (project.telegram_url && !cleanedPositives.some((p: string) => p.toLowerCase().includes('telegram'))) cleanedPositives.push('Telegram community is linked')
-    if (project.discord_url  && !cleanedPositives.some((p: string) => p.toLowerCase().includes('discord')))  cleanedPositives.push('Discord server is linked')
+    if (project.twitter_url  && !cleanedPositives.some((x: string) => x.toLowerCase().includes('twitter')))  cleanedPositives.push('Twitter/X account is linked')
+    if (project.github_url   && !cleanedPositives.some((x: string) => x.toLowerCase().includes('github')))   cleanedPositives.push('Public GitHub repository is linked')
+    if (project.telegram_url && !cleanedPositives.some((x: string) => x.toLowerCase().includes('telegram'))) cleanedPositives.push('Telegram community is linked')
+    if (project.discord_url  && !cleanedPositives.some((x: string) => x.toLowerCase().includes('discord')))  cleanedPositives.push('Discord server is linked')
 
     await supabase.from('ai_scores').insert({
       project_id:         project.id,
@@ -111,9 +99,25 @@ async function runEvaluation(project: any, payload: any, supabase: any) {
     })
 
     await supabase.from('projects').update({ evaluation_status: 'completed' }).eq('id', project.id)
-    console.log(`[submit] eval complete for ${project.id}: score=${aiScore.score} tx=${aiScore.tx_hash ?? 'fallback'}`)
+    console.log(`[submit] eval complete for ${project.id}: score=${aiScore.score}`)
+
+    return NextResponse.json({
+      success: true,
+      project,
+      score: aiScore.score,
+      message: 'Project submitted and evaluated successfully!',
+      remaining_submissions: remaining,
+    }, { status: 201 })
+
   } catch (e: any) {
     console.error('[submit] eval failed:', e.message)
     await supabase.from('projects').update({ evaluation_status: 'failed', evaluation_attempts: 1 }).eq('id', project.id)
+    // Still return success for the project creation — evaluation failed but project is saved
+    return NextResponse.json({
+      success: true,
+      project,
+      message: 'Project submitted! AI evaluation is running — check back in a few minutes.',
+      remaining_submissions: remaining,
+    }, { status: 201 })
   }
 }

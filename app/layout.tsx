@@ -29,14 +29,25 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <Navbar session={session} />
-          <div style={{ marginTop: 64, display: 'flex', minHeight: 'calc(100vh - 64px)', overflow: 'hidden', maxWidth: '100vw' }}>
+          {/* 
+            Layout strategy:
+            - Sidebar is position:fixed — it doesn't affect flow
+            - We add a spacer div (sidebar-spacer) that takes the same width as the sidebar
+            - On mobile, sidebar-spacer collapses to 0
+          */}
+          <div style={{ marginTop: 64, display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
+            {/* Fixed sidebar (desktop only) */}
             <Sidebar session={session} />
-            <div style={{ flex: 1, minWidth: 0, width: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden' }}>
-              <main style={{ flex: 1, minWidth: 0, overflowX: 'hidden' }}>{children}</main>
+            {/* Spacer that mirrors sidebar width on desktop, collapses on mobile */}
+            <div className="sidebar-spacer" />
+            {/* Main content area */}
+            <div className="main-content">
+              <main style={{ flex: 1 }}>{children}</main>
               <Footer />
             </div>
           </div>
