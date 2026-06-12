@@ -197,14 +197,18 @@ export function Sidebar({ session: initialSession }: Props) {
       </nav>
 
       {/* Stats */}
-      {!collapsed && mounted && (
-        <div style={{ borderTop: '1px solid var(--border)', padding: '16px 18px', flexShrink: 0 }}>
+      {mounted && (
+        <div style={{ borderTop: '1px solid var(--border)', padding: collapsed ? '12px 0' : '16px 18px', flexShrink: 0 }}>
           {[
             { icon: Users,       label: 'Users',       value: stats.users       },
             { icon: FolderOpen,  label: 'Projects',    value: stats.projects    },
             { icon: ShieldCheck, label: 'Evaluations', value: stats.evaluations },
           ].map(({ icon: Icon, label, value }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <div key={label} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              marginBottom: 14,
+              justifyContent: collapsed ? 'center' : 'flex-start',
+            }} title={collapsed ? `${label}: ${value}` : undefined}>
               <div style={{
                 width: 36, height: 36, borderRadius: 10,
                 background: 'var(--brand-bg)',
@@ -213,12 +217,14 @@ export function Sidebar({ session: initialSession }: Props) {
               }}>
                 <Icon size={16} color="var(--brand)" />
               </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-1)', lineHeight: 1, letterSpacing: '-0.02em' }}>
-                  {value > 0 ? value.toLocaleString() : '—'}
+              {!collapsed && (
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-1)', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                    {value > 0 ? value.toLocaleString() : '—'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>{label}</div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>{label}</div>
-              </div>
+              )}
             </div>
           ))}
         </div>

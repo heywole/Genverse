@@ -66,7 +66,7 @@ export default function BuildersPage() {
             return (
               <div
                 key={b.user_id}
-                onClick={() => router.push(`/profile?builder=${b.user_id}`)}
+                onClick={() => router.push(`/builders/${b.user_id}`)}
                 style={{
                   // Same background/border as project cards
                   background:    'var(--bg-card)',

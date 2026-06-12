@@ -210,12 +210,11 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
             <div style={{ width: 1, height: 36, background: 'rgba(0,0,0,0.08)', flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 5 }}>AI Score</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>
                   <Shield size={11} color={colors.main} />
                   Trust: <strong style={{ color: colors.main, marginLeft: 2 }}>{Number(ai.score) >= 75 ? 'High' : Number(ai.score) >= 50 ? 'Moderate' : 'Low'}</strong>
                 </span>
-                <span style={{ color: 'var(--border-hi)', fontSize: 11 }}>|</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>
                   <AlertTriangle size={11} color={colors.main} />
                   Risk: <strong style={{ color: colors.main, marginLeft: 2 }}>{ai.risk ?? 'Unknown'}</strong>

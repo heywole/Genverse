@@ -251,14 +251,6 @@ export default function HomePage() {
           <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.78, maxWidth: 380, marginBottom: 28 }}>
             GenRadar combines AI-powered evaluation, backend security scanning, and community validation to help you discover and trust the best GenLayer Community Projects.
           </p>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <Link href="/explore" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 20px', background: 'var(--text-1)', color: 'var(--bg)', fontWeight: 700, fontSize: 13, textDecoration: 'none', borderRadius: 10 }}>
-              Explore Projects <ArrowRight size={14} />
-            </Link>
-            <Link href="/submit" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 20px', background: 'transparent', color: 'var(--text-1)', border: '1.5px solid var(--border-hi)', fontWeight: 600, fontSize: 13, textDecoration: 'none', borderRadius: 10 }}>
-              Submit Your Project
-            </Link>
-          </div>
         </div>
 
         <div className="hero-pills" style={{ padding: '36px 36px 36px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>

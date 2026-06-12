@@ -49,7 +49,7 @@ export default function LeaderboardPage() {
             return (
               <div
                 key={b.user_id}
-                onClick={() => router.push(`/profile?builder=${b.user_id}`)}
+                onClick={() => router.push(`/builders/${b.user_id}`)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 16,
                   padding: '14px 18px', borderRadius: 12, cursor: 'pointer',
