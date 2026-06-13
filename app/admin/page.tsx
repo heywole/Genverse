@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { markEvaluating } from '@/lib/evaluatingState'
 import {
   ShieldCheck, RefreshCw, Trash2, CheckCircle, XCircle,
   AlertTriangle, Users, FolderOpen, Zap, MessageSquare,
@@ -81,6 +82,7 @@ export default function AdminPage() {
       ? `Force re-evaluate "${name}"?`
       : null
     if (confirmMsg && !window.confirm(confirmMsg)) return
+    if (action === 're-evaluate') markEvaluating(project_id)
 
     setActing(project_id + action)
     setMsg(null)
@@ -105,6 +107,7 @@ export default function AdminPage() {
   // Raw action call without confirm/message — used by bulk runner
   async function rawAction(action: string, project_id: string) {
     if (!token) return { error: 'No token' }
+    if (action === 're-evaluate') markEvaluating(project_id)
     try {
       const res = await fetch('/api/admin', {
         method: 'POST',

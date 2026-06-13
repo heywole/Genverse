@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Eye, Bookmark, Loader2, Shield, AlertTriangle, CheckCircle, ThumbsUp } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { isEvaluating, clearEvaluating } from '@/lib/evaluatingState'
 import type { Project } from '@/types'
 
 function XIcon()        { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> }
@@ -45,6 +46,7 @@ interface Props {
 export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Props) {
   const router   = useRouter()
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const initialTxHash = useRef<string | null>(project.ai_score?.tx_hash ?? null)
 
   const [liveScore, setLiveScore] = useState<any>(() => {
     const s = project.ai_score
@@ -55,8 +57,9 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
   const [upvotes,   setUpvotes]   = useState<number>((project as any)._votes?.up ?? 0)
   const [saved,     setSaved]     = useState(false)
   const [hov,       setHov]       = useState(false)
+  const [evaluating, setEvaluating] = useState(() => isEvaluating(project.id))
 
-  const ai     = liveScore
+  const ai     = evaluating ? null : liveScore
   const colors = ai ? scoreColor(Number(ai.score)) : null
   const isVerified = ai && Number(ai.score) >= 75 && ai.risk === 'Low'
   const tw = (project as any).twitter_url
@@ -76,6 +79,19 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
 
       const scoreRow = scoreRows?.[0] ?? null
       const score = scoreRow && Number(scoreRow.score) > 0 ? scoreRow : null
+
+      // If we were "evaluating", only clear it once the tx_hash actually changes
+      // (proves a NEW evaluation completed, not just the old score still sitting there)
+      if (evaluating) {
+        const newTxHash: string | null = (score as any)?.tx_hash ?? null
+        const changed = newTxHash && newTxHash !== initialTxHash.current
+        if (changed) {
+          setEvaluating(false)
+          clearEvaluating(project.id)
+          initialTxHash.current = newTxHash
+        }
+      }
+
       setLiveScore(score)
 
       // Fetch view and save counts
@@ -106,8 +122,8 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
   function startPolling() {
     if (timerRef.current) return // already polling
     timerRef.current = setInterval(async () => {
-      const hasScore = await fetchData()
-      if (hasScore) stopPolling()
+      await fetchData()
+      if (!isEvaluating(project.id)) stopPolling()
     }, 4000)
   }
 
@@ -121,8 +137,16 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
   useEffect(() => {
     // Fetch immediately on mount
     fetchData().then(hasScore => {
-      if (!hasScore) startPolling()
+      if (!hasScore || isEvaluating(project.id)) startPolling()
     })
+
+    // Listen for evaluation-started events (from re-evaluate button / admin bulk actions)
+    function handleEvalStart(e: any) {
+      if (e.detail?.projectId !== project.id) return
+      setEvaluating(true)
+      startPolling()
+    }
+    window.addEventListener('evaluation-started', handleEvalStart)
 
     // Page-level refresh event from explore/home page
     function handleRefresh(e: any) {
@@ -147,6 +171,7 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
       stopPolling()
       window.removeEventListener('projects-refreshed', handleRefresh)
       window.removeEventListener('vote-updated', handleVoteUpdate)
+      window.removeEventListener('evaluation-started', handleEvalStart)
     }
   }, [project.id])
 
