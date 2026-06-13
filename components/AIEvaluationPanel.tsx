@@ -140,7 +140,7 @@ export function AIEvaluationPanel({ score: ai, project }: Props) {
         {/* How it works */}
         <div style={{ padding: '14px 18px', borderRadius: 12, background: 'var(--blue-bg)', border: '1px solid var(--blue-bd)', fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7 }}>
           <p style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 6, fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>How this score was generated</p>
-          <p>GenRadar's scanner checks threat databases (GoPlus, Google Safe Browsing, ScamSniffer) and analyses the website for phishing, unsafe wallet patterns, and suspicious scripts. These signals are sent to <strong>GenLayer AI Consensus</strong> — multiple independent validators (GPT-4, Claude, Llama) each run the evaluation contract and reach consensus on-chain.</p>
+          <p>GenRadar's scanner checks threat databases (GoPlus, Google Safe Browsing, ScamSniffer) and analyses the website for phishing, unsafe wallet patterns, and suspicious scripts. These signals are sent to <strong>GenLayer AI Consensus</strong> — 5 independent AI validators each run the evaluation contract and reach consensus on-chain.</p>
         </div>
 
         {/* Security score breakdown */}
