@@ -58,6 +58,8 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
   const [saved,     setSaved]     = useState(false)
   const [hov,       setHov]       = useState(false)
   const [evaluating, setEvaluating] = useState(() => isEvaluating(project.id))
+  const evaluatingRef = useRef(evaluating)
+  evaluatingRef.current = evaluating
 
   const ai     = evaluating ? null : liveScore
   const colors = ai ? scoreColor(Number(ai.score)) : null
@@ -82,7 +84,7 @@ export function ProjectCard({ project, showEditControls, onEdit, onDelete }: Pro
 
       // If we were "evaluating", only clear it once the tx_hash actually changes
       // (proves a NEW evaluation completed, not just the old score still sitting there)
-      if (evaluating) {
+      if (evaluatingRef.current) {
         const newTxHash: string | null = (score as any)?.tx_hash ?? null
         const changed = newTxHash && newTxHash !== initialTxHash.current
         if (changed) {
