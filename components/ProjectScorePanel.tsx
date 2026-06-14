@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { VoteButtons } from '@/components/VoteButtons'
-import { isEvaluating, clearEvaluating } from '@/lib/evaluatingState'
-import { supabase } from '@/lib/supabase'
 
 function riskColors(risk: string) {
   if (risk === 'Low')    return { c: 'var(--green)',  bg: 'var(--green-bg)',  bd: 'var(--green-bd)'  }
@@ -23,51 +21,69 @@ function trustLabel(risk: string) {
 }
 
 interface Props {
-  projectId:    string
-  initialScore: any
-  onSeeMore?:   () => void
+  projectId:         string
+  initialScore:      any
+  initialEvalStatus?: string | null
+  onSeeMore?:        () => void
 }
 
-export function ProjectScorePanel({ projectId, initialScore, onSeeMore }: Props) {
-  const [score,      setScore]      = useState<any>(initialScore && Number(initialScore.score) > 0 ? initialScore : null)
-  const [evaluating, setEvaluating] = useState(() => isEvaluating(projectId))
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
+export function ProjectScorePanel({ projectId, initialScore, initialEvalStatus, onSeeMore }: Props) {
+  const hasInitialScore  = !!(initialScore && Number(initialScore.score) > 0)
+  const isInitiallyEval  = initialEvalStatus === 'processing' || initialEvalStatus === 'pending'
+
+  const [score,      setScore]      = useState<any>(hasInitialScore ? initialScore : null)
+  const [evaluating, setEvaluating] = useState(isInitiallyEval || !hasInitialScore)
+  const evaluatingRef               = useRef(evaluating)
+  evaluatingRef.current             = evaluating
+  const timerRef                    = useRef<NodeJS.Timeout | null>(null)
+
+  async function checkStatus() {
+    try {
+      const res  = await fetch(`/api/projects?id=${projectId}`)
+      const d    = await res.json()
+      const proj = (d.projects ?? [])[0]
+      if (!proj) return
+
+      const evStatus = proj.evaluation_status
+      const row      = proj.ai_score
+      const hasScore = !!(row && Number(row.score) > 0)
+
+      if (evStatus === 'completed' && hasScore) {
+        setScore(row)
+        setEvaluating(false)
+        stopPolling()
+      } else if (evStatus === 'processing' || evStatus === 'pending') {
+        setEvaluating(true)
+      } else if (evStatus === 'failed') {
+        setEvaluating(false)
+        stopPolling()
+      }
+    } catch {}
+  }
 
   function startPolling() {
     if (timerRef.current) return
-    timerRef.current = setInterval(async () => {
-      try {
-        const { data: rows } = await supabase
-          .from('ai_scores').select('*').eq('project_id', projectId)
-          .order('created_at', { ascending: false }).limit(1)
-        const row   = rows?.[0] ?? null
-        const fresh = row && Number(row.score) > 0 ? row : null
-        if (fresh) {
-          // Fix: cast to string explicitly before passing to Date
-          const freshDate = new Date(fresh.created_at as string)
-          const scoreDate = score ? new Date(score.created_at as string) : null
-          const isNewer   = !scoreDate || freshDate > scoreDate
-          if (isNewer) {
-            setScore(fresh)
-            setEvaluating(false)
-            clearEvaluating(projectId)
-            clearInterval(timerRef.current!)
-            timerRef.current = null
-          }
-        }
-      } catch {}
-    }, 4000)
+    timerRef.current = setInterval(checkStatus, 4000)
+  }
+
+  function stopPolling() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
   }
 
   useEffect(() => {
-    if (isEvaluating(projectId)) { setEvaluating(true); startPolling() }
+    // Start polling immediately if evaluating
+    if (evaluating) startPolling()
+
+    // Also listen for re-evaluate events triggered from this page (admin, re-eval button)
     function handleEvalStart(e: any) {
       if (e.detail?.projectId !== projectId) return
-      setEvaluating(true); startPolling()
+      setEvaluating(true)
+      startPolling()
     }
     window.addEventListener('evaluation-started', handleEvalStart)
+
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
+      stopPolling()
       window.removeEventListener('evaluation-started', handleEvalStart)
     }
   }, [projectId])
@@ -98,7 +114,6 @@ export function ProjectScorePanel({ projectId, initialScore, onSeeMore }: Props)
 
   return (
     <div style={{ background: 'var(--bg-secondary)', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)' }}>
-
       {/* Score circle */}
       <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>
         <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14, fontFamily: 'var(--font-mono)' }}>AI Trust Score</p>
@@ -113,7 +128,6 @@ export function ProjectScorePanel({ projectId, initialScore, onSeeMore }: Props)
             <span style={{ fontSize: 9, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>/100</span>
           </div>
         </div>
-
         {rc && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
             <span style={{ padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700, background: rc.bg, color: rc.c, border: `1px solid ${rc.bd}` }}>
@@ -138,7 +152,6 @@ export function ProjectScorePanel({ projectId, initialScore, onSeeMore }: Props)
         </a>
       </div>
 
-      {/* Brief positives */}
       {briefPositives.length > 0 && (
         <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--green)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontFamily: 'var(--font-mono)' }}>✓ Positive Signals</p>
@@ -150,7 +163,6 @@ export function ProjectScorePanel({ projectId, initialScore, onSeeMore }: Props)
         </div>
       )}
 
-      {/* Brief risks */}
       {briefRisks.length > 0 && (
         <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontFamily: 'var(--font-mono)' }}>⚠ Risk Signals</p>
@@ -162,7 +174,6 @@ export function ProjectScorePanel({ projectId, initialScore, onSeeMore }: Props)
         </div>
       )}
 
-      {/* See full evaluation */}
       {onSeeMore && (
         <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
           <button onClick={onSeeMore} style={{
@@ -176,7 +187,6 @@ export function ProjectScorePanel({ projectId, initialScore, onSeeMore }: Props)
         </div>
       )}
 
-      {/* Community votes */}
       <div style={{ padding: '14px', background: 'var(--bg-card)' }}>
         <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, fontFamily: 'var(--font-mono)' }}>Community Trust</p>
         <VoteButtons projectId={projectId} />

@@ -59,8 +59,8 @@ export async function GET(req: NextRequest) {
   }))
 
   const active      = projectsWithScores.filter(p => p.status === 'active')
-  const evaluated   = active.filter(p => p.ai_score)
-  const stuck       = active.filter(p => !p.ai_score)
+  const evaluated   = active.filter(p => p.evaluation_status === 'completed' && p.ai_score)
+  const stuck       = active.filter(p => p.evaluation_status === 'processing' || p.evaluation_status === 'pending' || p.evaluation_status === 'failed')
   const allScores   = evaluated.map(p => Number(p.ai_score.score)).filter(Boolean)
   const avgScore    = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : null
   const totalUsers  = usersData?.users?.length ?? 0

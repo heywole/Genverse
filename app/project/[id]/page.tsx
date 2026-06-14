@@ -20,7 +20,6 @@ async function getProject(id: string) {
     .from('projects').select('*').eq('id', id).eq('status', 'active').single()
   if (error || !project) return null
 
-  // Always pick only the most recent score row
   const { data: scores } = await supabase
     .from('ai_scores').select('*').eq('project_id', id)
     .order('created_at', { ascending: false }).limit(1)
@@ -43,13 +42,13 @@ export default async function ProjectPage({ params }: { params: { id: string } }
   const project = await getProject(params.id)
   if (!project) notFound()
 
-  const scoreRow   = project.ai_score as any
-  const hasScore   = !!(scoreRow && Number(scoreRow.score) > 0)
-  const isVerified = hasScore && Number(scoreRow.score) >= 75 && scoreRow.risk === 'Low'
+  const scoreRow       = project.ai_score as any
+  const hasScore       = !!(scoreRow && Number(scoreRow.score) > 0)
+  const evalStatus     = project.evaluation_status as string | null
+  const isVerified     = hasScore && Number(scoreRow.score) >= 75 && scoreRow.risk === 'Low'
 
   const projectDetailsPanel = (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 290px', gap: 32, alignItems: 'start' }} className="proj-detail-grid">
-      {/* LEFT */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
         <div>
           <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, fontFamily: 'var(--font-mono)' }}>About</p>
@@ -58,10 +57,12 @@ export default async function ProjectPage({ params }: { params: { id: string } }
         </div>
         <ProjectChat projectId={project.id} />
       </div>
-
-      {/* RIGHT — score panel */}
       <div style={{ position: 'sticky', top: 20 }} className="proj-detail-sidebar">
-        <ProjectScorePanelWrapper projectId={project.id} initialScore={scoreRow} />
+        <ProjectScorePanelWrapper
+          projectId={project.id}
+          initialScore={scoreRow}
+          initialEvalStatus={evalStatus}
+        />
       </div>
     </div>
   )
@@ -70,9 +71,12 @@ export default async function ProjectPage({ params }: { params: { id: string } }
 
   return (
     <>
-      <ProjectPageAutoRefresh hasScore={hasScore} projectId={project.id} />
+      <ProjectPageAutoRefresh
+        hasScore={hasScore}
+        projectId={project.id}
+        evaluationStatus={evalStatus}
+      />
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 20px 80px' }}>
-
         <Link href="/explore" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-3)', textDecoration: 'none', marginBottom: 18, fontFamily: 'var(--font-mono)' }}>
           <ArrowLeft size={12} /> back to projects
         </Link>
@@ -82,7 +86,6 @@ export default async function ProjectPage({ params }: { params: { id: string } }
           <span><strong>Community-submitted.</strong> GenRadar does not endorse any project. Always do your own research.</span>
         </div>
 
-        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, marginBottom: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 64, height: 64, borderRadius: 14, background: 'var(--bg-secondary)', border: '1px solid var(--border)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
