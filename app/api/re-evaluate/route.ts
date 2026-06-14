@@ -19,8 +19,6 @@ export async function POST(req: NextRequest) {
     .from('projects').select('id').eq('id', project_id).single()
   if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Set to 'pending' — this triggers the database webhook which calls the edge function
-  // The edge function does the actual GenLayer evaluation
   const { error } = await supabase
     .from('projects')
     .update({ evaluation_status: 'pending' })
